@@ -1,0 +1,97 @@
+[build-system]
+requires = ["poetry_core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "BERTopic-as-service"
+version = "0.1.0"
+homepage = "https://github.com/SergeyShk/bertopic-as-service"
+repository = "https://github.com/SergeyShk/bertopic-as-service"
+documentation = "https://github.com/SergeyShk/bertopic-as-service"
+authors = ["Sergey Shkarin <kouki.sergey@gmail.com>", "Alexey Vatolin <vatolinalex@gmail.com>"]
+maintainers = ["Sergey Shkarin <kouki.sergey@gmail.com>"]
+description = "Using BERTopic as a service to create easily interpretable topics"
+license = "MIT"
+keywords = ["Topic Modeling", "BERTopic", "FastAPI"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+bertopic = "0.9.3"
+fastapi = "*"
+gunicorn = "*"
+uvicorn = "*"
+importlib-metadata = "^4.8.0"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+flake8 = "3.9.2"
+isort = "*"
+mypy = "*"
+pre-commit = "*"
+pytest = "*"
+pytest-cov = "*"
+pep8-naming = "*"
+flake8-bugbear = "*"
+flake8-builtins = "*"
+flakehell = "^0.9.0"
+
+[tool.black]
+target-version = ["py38"]
+line-length = 99
+color = true
+
+[tool.isort]
+py_version = 38
+line_length = 99
+known_typing = ["typing", "types", "typing_extensions", "mypy", "mypy_extensions"]
+sections = ["FUTURE", "TYPING", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+profile = "black"
+include_trailing_comma = true
+multi_line_output = 3
+indent = 4
+color_output = true
+
+[tool.mypy]
+python_version = 3.8
+files = ["ruts", "tests"]
+pretty = true
+show_traceback = true
+color_output = true
+allow_redefinition = false
+check_untyped_defs = true
+disallow_any_generics = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+implicit_reexport = false
+no_implicit_optional = true
+show_column_numbers = true
+show_error_codes = true
+show_error_context = true
+strict_equality = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[tool.flakehell]
+exclude = ["*.md"]
+format = "grouped"
+max_line_length = 99
+max_complexity = 18
+show_source = true
+extended_default_ignore = []
+
+[tool.flakehell.plugins]
+pylint = ["+*", "-E203", "-E266", "-E501", "-W503"]
+pyflakes = ["+*"]
+"flake8-*" = ["+*", "-B008"]
+mccabe = ["+*"]
+pep8-naming = ["+*"]
+
+[tool.pytest.ini_options]
+addopts = "-vv -x --lf"
+testpaths = ["tests"]
