@@ -1,11 +1,9 @@
 import sys
-from urllib.parse import urljoin
 
 from fastapi.testclient import TestClient
 
 sys.path.append("..")
 from service.main import app
-from service.core.config import settings
 
 client = TestClient(app)
 
