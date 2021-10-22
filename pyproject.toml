@@ -22,6 +22,8 @@ fastapi = "*"
 gunicorn = "*"
 uvicorn = "*"
 importlib-metadata = "^4.8.0"
+aiobotocore = "^1.4.2"
+pydantic = {extras = ["dotenv"], version = "^1.8.2"}
 
 [tool.poetry.dev-dependencies]
 black = "*"

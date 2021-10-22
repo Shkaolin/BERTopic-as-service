@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+  minio:
+    container_name: minio
+    hostname: minio
+    image: quay.io/minio/minio:latest
+    entrypoint: sh
+    command: -c 'mkdir -p /data/${MINIO_BUCKET_NAME} && /opt/bin/minio server --console-address ":9001" /data'
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      ./.env
+    volumes:
+      - data:/data:rw
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  data:

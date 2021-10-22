@@ -1,30 +1,53 @@
 from typing import List
 
+import io
 import uuid
 
+import joblib
+from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
 from fastapi.exceptions import HTTPException
-from fastapi.params import Query
+from fastapi.params import Depends, Query
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
+# from botocore.errorfactory import NoSuchKey
 
+from service.api import deps
 from service.core.config import settings
-from service.schemas.base import Input, ModelId, ModelPrediction, Topic, TopicTopWords, Word
+from service.schemas.base import Input, ModelId, ModelPrediction, NotEmptyInput, Topic, TopicTopWords, Word
 
 router = APIRouter()
 
 
-def load_model(model_id: UUID4) -> BERTopic:
-    model_path = settings.DATA_DIR / str(model_id)
-    if not model_path.exists():
+async def load_model(s3: ClientCreatorContext, model_id: UUID4) -> BERTopic:
+    try:
+        response = await s3.get_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
+
+        with io.BytesIO() as f:  # double memory usage
+            async with response["Body"] as stream:
+                data = await stream.read()
+                f.write(data)
+                f.seek(0)
+            return joblib.load(f)
+
+    except s3.exceptions.NoSuchKey:
         raise HTTPException(status_code=404, detail="Model not found")
 
-    return BERTopic.load(model_path)
+
+async def save_model_to_s3(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UUID:
+    model_id = str(uuid.uuid4())
+
+    with io.BytesIO() as f:
+        joblib.dump(topic_model, f)
+        f.seek(0)
+        await s3.put_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_id, Body=f.read())
+    return model_id
 
 
 @router.post("/modeling", summary="Running topic modeling", response_model=ModelId)
-async def fit(data: Input) -> ModelId:
+async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> ModelId:
+    model_id = str(uuid.uuid4())
     topic_model = BERTopic()
     if data.texts:
         topics, probs = topic_model.fit_transform(data.texts)
@@ -33,19 +56,19 @@ async def fit(data: Input) -> ModelId:
             :100
         ]
         topics, probs = topic_model.fit_transform(docs)
-    model_id = uuid.uuid4()
-    settings.DATA_DIR.mkdir(
-        exist_ok=True, parents=True
-    )  # we need to put this in the settings so that the folder is created at the start of the project
-    topic_model.save(settings.DATA_DIR / str(model_id))
+
+    model_id = await save_model_to_s3(s3, topic_model)
     return ModelId(model_id=model_id)
 
 
 @router.post("/predict", summary="Predict with existing model", response_model=ModelPrediction)
 async def predict(
-    data: Input, model_id: UUID4 = Query(...), calculate_probabilities: bool = Query(default=False)
+    data: NotEmptyInput,
+    model_id: UUID4 = Query(...),
+    calculate_probabilities: bool = Query(default=False),
+    s3: ClientCreatorContext = Depends(deps.get_s3),
 ) -> ModelPrediction:
-    topic_model = load_model(model_id)
+    topic_model = await load_model(s3, model_id)
     topic_model.calculate_probabilities = calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
     if probabilities is not None:
@@ -54,13 +77,17 @@ async def predict(
 
 
 @router.get("/models", summary="Get all existing model ids", response_model=List[str])
-async def list_models():
-    return [p.name for p in settings.DATA_DIR.iterdir()]
+async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)):
+    paginator = s3.get_paginator('list_objects')
+    async for result in paginator.paginate(Bucket=settings.MINIO_BUCKET_NAME):
+        return [x["Key"] for x in result.get('Contents', [])]
 
 
 @router.get("/get_topics", summary="Get topics", response_model=List[TopicTopWords])
-async def get_topics(model_id: UUID4 = Query(...)) -> List[TopicTopWords]:
-    topic_model = load_model(model_id)
+async def get_topics(
+    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
+) -> List[TopicTopWords]:
+    topic_model = await load_model(s3, model_id)
     topic_info = topic_model.get_topics()
     topics = []
     for topic_id, top_words in topic_info.items():
@@ -74,17 +101,19 @@ async def get_topics(model_id: UUID4 = Query(...)) -> List[TopicTopWords]:
 
 
 @router.get("/topics_info", summary="Get topics info", response_model=List[Topic])
-async def get_topic_info(model_id: UUID4 = Query(...)) -> List[dict]:
-    topic_model = load_model(model_id)
+async def get_topic_info(
+    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
+) -> List[dict]:
+    topic_model = await load_model(s3, model_id)
     topic_info = topic_model.get_topic_info()
     topic_info.columns = topic_info.columns.str.lower()
     return topic_info.to_dict("records")
 
 
 @router.get("/remove_model", summary="Remove topic model")
-async def remove_model(model_id: UUID4 = Query(...)) -> str:
-    model_path = settings.DATA_DIR / str(model_id)
-    if not model_path.exists():
+async def remove_model(model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)) -> str:
+    try:
+        await s3.delete_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
+    except s3.exceptions.NoSuchKey:
         raise HTTPException(status_code=404, detail="Model not found")
-    model_path.unlink()
     return "ok"
