@@ -11,11 +11,18 @@ from fastapi.params import Depends, Query
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
-# from botocore.errorfactory import NoSuchKey
 
 from service.api import deps
 from service.core.config import settings
-from service.schemas.base import Input, ModelId, ModelPrediction, NotEmptyInput, Topic, TopicTopWords, Word
+from service.schemas.base import (
+    Input,
+    ModelId,
+    ModelPrediction,
+    NotEmptyInput,
+    Topic,
+    TopicTopWords,
+    Word,
+)
 
 router = APIRouter()
 
@@ -78,9 +85,9 @@ async def predict(
 
 @router.get("/models", summary="Get all existing model ids", response_model=List[str])
 async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)):
-    paginator = s3.get_paginator('list_objects')
+    paginator = s3.get_paginator("list_objects")
     async for result in paginator.paginate(Bucket=settings.MINIO_BUCKET_NAME):
-        return [x["Key"] for x in result.get('Contents', [])]
+        return [x["Key"] for x in result.get("Contents", [])]
 
 
 @router.get("/get_topics", summary="Get topics", response_model=List[TopicTopWords])
@@ -111,7 +118,9 @@ async def get_topic_info(
 
 
 @router.get("/remove_model", summary="Remove topic model")
-async def remove_model(model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)) -> str:
+async def remove_model(
+    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
+) -> str:
     try:
         await s3.delete_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
     except s3.exceptions.NoSuchKey:
