@@ -42,7 +42,7 @@ async def load_model(s3: ClientCreatorContext, model_id: UUID4) -> BERTopic:
         raise HTTPException(status_code=404, detail="Model not found")
 
 
-async def save_model_to_s3(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UUID:
+async def save_model(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UUID:
     model_id = str(uuid.uuid4())
 
     with io.BytesIO() as f:
@@ -52,7 +52,7 @@ async def save_model_to_s3(s3: ClientCreatorContext, topic_model: BERTopic) -> u
     return model_id
 
 
-@router.post("/modeling", summary="Running topic modeling", response_model=ModelId)
+@router.post("/fit", summary="Run topic modeling", response_model=ModelId)
 async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> ModelId:
     model_id = str(uuid.uuid4())
     topic_model = BERTopic()
@@ -64,7 +64,7 @@ async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> M
         ]
         topics, probs = topic_model.fit_transform(docs)
 
-    model_id = await save_model_to_s3(s3, topic_model)
+    model_id = await save_model(s3, topic_model)
     return ModelId(model_id=model_id)
 
 
@@ -90,7 +90,7 @@ async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)):
         return [x["Key"] for x in result.get("Contents", [])]
 
 
-@router.get("/get_topics", summary="Get topics", response_model=List[TopicTopWords])
+@router.get("/topics", summary="Get topics", response_model=List[TopicTopWords])
 async def get_topics(
     model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
 ) -> List[TopicTopWords]:
