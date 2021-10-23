@@ -16,12 +16,14 @@ keywords = ["Topic Modeling", "BERTopic", "FastAPI"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 bertopic = "0.9.3"
 fastapi = "*"
 gunicorn = "*"
 uvicorn = "*"
 importlib-metadata = "^4.8.0"
+aiobotocore = "^1.4.2"
+pydantic = {extras = ["dotenv"], version = "^1.8.2"}
 
 [tool.poetry.dev-dependencies]
 black = "*"
