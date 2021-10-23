@@ -1,0 +1,33 @@
+name: build
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+
+    - name: Build images
+      run: |
+        make build
+
+    - name: Start services
+      run: |
+        make up
+
+    - name: Run code checks
+      run: |
+        make check-code
+
+    - name: Run integration tests
+      run: |
+        make test
