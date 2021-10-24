@@ -20,5 +20,18 @@ services:
       timeout: 20s
       retries: 3
 
+  db:
+    container_name: db
+    image: postgres
+    restart: always
+    ports:
+     - 5432:5432
+    env_file:
+      ./.env
+    volumes:
+     - pg_data:/var/lib/postgresql/data
+    
+
 volumes:
   data:
+  pg_data:

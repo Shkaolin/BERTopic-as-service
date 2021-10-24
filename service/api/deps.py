@@ -1,6 +1,8 @@
 from aiobotocore.session import get_session
+from sqlmodel import Session
 
 from service.core.config import settings
+from service.db.db import engine
 
 
 async def get_s3():
@@ -14,3 +16,8 @@ async def get_s3():
         aws_access_key_id=settings.MINIO_ACCESS_KEY,
     ) as client:
         yield client
+
+
+def get_db() -> Session:
+    with Session(engine) as session:
+        yield session

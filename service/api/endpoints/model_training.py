@@ -11,15 +11,16 @@ from fastapi.params import Depends, Query
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
+from sqlmodel import Session, select
 
 from service.api import deps
 from service.core.config import settings
+from service.models import models
 from service.schemas.base import (
     Input,
     ModelId,
     ModelPrediction,
     NotEmptyInput,
-    Topic,
     TopicTopWords,
     Word,
 )
@@ -53,7 +54,11 @@ async def save_model(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UU
 
 
 @router.post("/fit", summary="Run topic modeling", response_model=ModelId)
-async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> ModelId:
+async def fit(
+    data: Input,
+    s3: ClientCreatorContext = Depends(deps.get_s3),
+    session: Session = Depends(deps.get_db),
+) -> ModelId:
     model_id = str(uuid.uuid4())
     topic_model = BERTopic()
     if data.texts:
@@ -65,6 +70,12 @@ async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> M
         topics, probs = topic_model.fit_transform(docs)
 
     model_id = await save_model(s3, topic_model)
+
+    topic_info = topic_model.get_topic_info()
+    topic_info.columns = topic_info.columns.str.lower()
+    for topic_info in topic_info.to_dict("records"):
+        session.add(models.Topic(model_id=model_id, **topic_info))
+    session.commit()
     return ModelId(model_id=model_id)
 
 
@@ -84,7 +95,7 @@ async def predict(
 
 
 @router.get("/models", summary="Get all existing model ids", response_model=List[str])
-async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)):
+async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)) -> List[str]:
     paginator = s3.get_paginator("list_objects")
     async for result in paginator.paginate(Bucket=settings.MINIO_BUCKET_NAME):
         return [x["Key"] for x in result.get("Contents", [])]
@@ -107,14 +118,15 @@ async def get_topics(
     return topics
 
 
-@router.get("/topics_info", summary="Get topics info", response_model=List[Topic])
-async def get_topic_info(
-    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
-) -> List[dict]:
-    topic_model = await load_model(s3, model_id)
-    topic_info = topic_model.get_topic_info()
-    topic_info.columns = topic_info.columns.str.lower()
-    return topic_info.to_dict("records")
+@router.get("/topics_info", summary="Get topics info", response_model=List[models.TopicBase])
+async def get_topics_info(
+    model_id: UUID4 = Query(...), session: Session = Depends(deps.get_db)
+) -> List[models.Topic]:
+    return session.exec(
+        select(models.Topic)
+        .filter(models.Topic.model_id == model_id)
+        .order_by(-models.Topic.count)
+    ).all()
 
 
 @router.get("/remove_model", summary="Remove topic model")
