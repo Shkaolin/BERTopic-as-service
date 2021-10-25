@@ -26,6 +26,7 @@ aiobotocore = "^1.4.2"
 pydantic = {extras = ["dotenv"], version = "^1.8.2"}
 sqlmodel = "^0.0.4"
 psycopg2-binary = "^2.9.1"
+asyncpg = "^0.24.0"
 
 [tool.poetry.dev-dependencies]
 black = "*"

@@ -3,9 +3,10 @@ from typing import AsyncGenerator, Generator
 from aiobotocore.client import AioBaseClient
 from aiobotocore.session import get_session
 from sqlmodel import Session
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.core.config import settings
-from service.db.db import engine
+from service.db.db import engine, engine_async
 
 
 async def get_s3() -> AsyncGenerator[AioBaseClient, None]:
@@ -19,6 +20,11 @@ async def get_s3() -> AsyncGenerator[AioBaseClient, None]:
         aws_access_key_id=settings.MINIO_ACCESS_KEY,
     ) as client:
         yield client
+
+
+async def get_db_async() -> AsyncGenerator[AsyncSession, None]:
+    async with AsyncSession(engine_async) as session:
+        yield session
 
 
 def get_db() -> Generator[Session, None, None]:

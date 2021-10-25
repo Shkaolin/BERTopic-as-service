@@ -12,7 +12,9 @@ from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
 from sqlalchemy.exc import NoResultFound
-from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.api import deps
 from service.core.config import settings
@@ -47,7 +49,9 @@ async def save_model(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UU
     return model_id
 
 
-def save_topics(topic_model: BERTopic, session: Session, model: models.TopicModel) -> None:
+async def save_topics(
+    topic_model: BERTopic, session: AsyncSession, model: models.TopicModel
+) -> None:
     topic_info = topic_model.get_topics()
     for topic_index, top_words in topic_info.items():
         topic = models.Topic(
@@ -58,14 +62,14 @@ def save_topics(topic_model: BERTopic, session: Session, model: models.TopicMode
             top_words=[models.Word(name=w[0], score=w[1]) for w in top_words],
         )
         session.add(topic)
-    session.commit()
+    await session.commit()
 
 
 @router.post("/fit", summary="Run topic modeling", response_model=ModelId)
 async def fit(
     data: Input,
     s3: ClientCreatorContext = Depends(deps.get_s3),
-    session: Session = Depends(deps.get_db),
+    session: AsyncSession = Depends(deps.get_db_async),
 ) -> ModelId:
     topic_model = BERTopic()
     if data.texts:
@@ -79,9 +83,9 @@ async def fit(
     model_id = await save_model(s3, topic_model)
     model = models.TopicModel(model_id=model_id)
     session.add(model)
-    session.commit()
-    session.refresh(model)
-    save_topics(topic_model, session, model)
+    await session.commit()
+    await session.refresh(model)
+    await save_topics(topic_model, session, model)
     return ModelId(model_id=model_id)
 
 
@@ -102,30 +106,34 @@ async def predict(
 
 @router.get("/models", summary="Get all existing model ids", response_model=List[str])
 async def list_models(
-    session: Session = Depends(deps.get_db),
+    session: AsyncSession = Depends(deps.get_db_async),
 ) -> List[str]:
-    return [str(r.model_id) for r in session.exec(select(models.TopicModel)).all()]
+    return [str(r.model_id) for r in (await session.execute(select(models.TopicModel))).all()]
 
 
 @router.get("/topics", summary="Get topics", response_model=List[models.TopicWithWords])
 async def get_topics(
-    model_id: UUID4 = Query(...), session: Session = Depends(deps.get_db)
+    model_id: UUID4 = Query(...), session: AsyncSession = Depends(deps.get_db_async)
 ) -> List[models.TopicWithWords]:
-    return session.exec(
+    result = await session.execute(
         select(models.Topic)
-        .filter(models.Topic.model_id == model_id)
+        .filter(models.TopicModel.model_id == model_id)
         .order_by(-models.Topic.count)
-    ).all()
+        .options(selectinload(models.Topic.top_words))
+    )
+    return result.scalars().all()
 
 
 @router.get("/topics_info", summary="Get topics info", response_model=List[models.TopicBase])
 async def get_topics_info(
-    model_id: UUID4 = Query(...), session: Session = Depends(deps.get_db)
+    model_id: UUID4 = Query(...), session: AsyncSession = Depends(deps.get_db_async)
 ) -> List[models.Topic]:
-    return session.exec(
-        select(models.Topic)
-        .filter(models.Topic.model_id == model_id)
-        .order_by(-models.Topic.count)
+    return (
+        await session.execute(
+            select(models.Topic)
+            .filter(models.TopicModel.model_id == model_id)
+            .order_by(-models.Topic.count)
+        )
     ).all()
 
 
@@ -133,13 +141,13 @@ async def get_topics_info(
 async def remove_model(
     model_id: UUID4 = Query(...),
     s3: ClientCreatorContext = Depends(deps.get_s3),
-    session: Session = Depends(deps.get_db),
+    session: AsyncSession = Depends(deps.get_db_async),
 ) -> str:
     try:
         statement = select(models.TopicModel).filter(models.TopicModel.model_id == model_id)
-        model = session.exec(statement).one()
-        session.delete(model)
-        session.commit()
+        model = (await session.execute(statement)).scalars().first()
+        await session.delete(model)
+        await session.commit()
 
         await s3.delete_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
     except (NoResultFound, s3.exceptions.NoSuchKey):

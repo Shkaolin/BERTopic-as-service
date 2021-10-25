@@ -1,9 +1,7 @@
 from typing import List, Optional
 
-import re
 from uuid import UUID
 
-from sqlalchemy.orm import declared_attr
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -12,14 +10,12 @@ class TopicModelBase(SQLModel):
 
 
 class TopicModel(TopicModelBase, table=True):
+    __tablename__ = "topic_model"
+
     id: Optional[int] = Field(default=None, primary_key=True)  # NOQA: A003
     topics: List["Topic"] = Relationship(
         back_populates="topic_model", sa_relationship_kwargs={"cascade": "all,delete"}
     )
-
-    @declared_attr
-    def __tablename__(cls) -> str:  # NOQA: N805
-        return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
 
 class WordBase(SQLModel):
