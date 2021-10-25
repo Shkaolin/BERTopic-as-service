@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, create_engine
 
-from service import models  # NOQA
 from service.core.config import settings
+from service.models import models  # NOQA
 
 # connect_args = {"check_same_thread": False}
 db_url = (

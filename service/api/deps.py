@@ -1,3 +1,6 @@
+from typing import AsyncGenerator, Generator
+
+from aiobotocore.client import AioBaseClient
 from aiobotocore.session import get_session
 from sqlmodel import Session
 
@@ -5,7 +8,7 @@ from service.core.config import settings
 from service.db.db import engine
 
 
-async def get_s3():
+async def get_s3() -> AsyncGenerator[AioBaseClient, None]:
     session = get_session()
     async with session.create_client(
         "s3",
@@ -18,6 +21,6 @@ async def get_s3():
         yield client
 
 
-def get_db() -> Session:
+def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session
