@@ -10,7 +10,7 @@ db_url = (
     f"@{settings.POSTGRES_HOST}:{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"
 )
 
-engine_async = create_async_engine(db_url, echo=True)
+engine_async = create_async_engine(db_url)
 engine = create_engine(db_url.replace("+asyncpg", ""))
 
 
