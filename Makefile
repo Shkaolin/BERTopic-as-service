@@ -1,5 +1,6 @@
 .PHONY: flake black test isort check-code build up down test
 .DEFAULT_GOAL := help
+APP_PATH := /app/service
 
 define PRINT_HELP_PYSCRIPT
 import re, sys
@@ -16,13 +17,13 @@ help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 flake: ## Check formatting with flake8
-	poetry run flakehell lint service tests
+	docker-compose run --rm --no-deps bertopic poetry run flakehell lint ${APP_PATH}
 
 black: ## Format code with black
-	poetry run black --config pyproject.toml service tests
+	docker-compose run --rm --no-deps bertopic poetry run black ${APP_PATH}
 
 isort: ## Check sorting with black
-	poetry run isort --settings-path pyproject.toml service tests
+	docker-compose run --rm --no-deps bertopic poetry run isort ${APP_PATH}
 
 check-code: flake black isort ## Run all code checks
 
