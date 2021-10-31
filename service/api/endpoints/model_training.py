@@ -6,8 +6,8 @@ import uuid
 import joblib
 from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
+from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
-from fastapi.params import Depends, Query
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
@@ -108,7 +108,9 @@ async def predict(
 async def list_models(
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> List[str]:
-    return [str(r.model_id) for r in (await session.execute(select(models.TopicModel))).all()]
+    return [
+        str(r.model_id) for r in (await session.execute(select(models.TopicModel))).scalars().all()
+    ]
 
 
 @router.get("/topics", summary="Get topics", response_model=List[models.TopicWithWords])
@@ -129,12 +131,16 @@ async def get_topics_info(
     model_id: UUID4 = Query(...), session: AsyncSession = Depends(deps.get_db_async)
 ) -> List[models.Topic]:
     return (
-        await session.execute(
-            select(models.Topic)
-            .filter(models.TopicModel.model_id == model_id)
-            .order_by(-models.Topic.count)
+        (
+            await session.execute(
+                select(models.Topic)
+                .filter(models.TopicModel.model_id == model_id)
+                .order_by(-models.Topic.count)
+            )
         )
-    ).all()
+        .scalars()
+        .all()
+    )
 
 
 @router.get("/remove_model", summary="Remove topic model")
