@@ -59,7 +59,7 @@ color_output = true
 
 [tool.mypy]
 python_version = 3.8
-files = ["ruts", "tests"]
+files = ["service", "tests"]
 pretty = true
 show_traceback = true
 color_output = true
