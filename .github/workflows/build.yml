@@ -42,7 +42,7 @@ jobs:
 
     - name: Run code checks
       run: |
-        make check-code
+        docker-compose run --rm --no-deps make check-code
 
     - name: Run integration tests
       run: |

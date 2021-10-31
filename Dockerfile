@@ -12,7 +12,7 @@ ENV PYTHONFAULTHANDLER=1 \
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get -y install gcc \
+    && apt-get -y install gcc make curl \
     && pip install "poetry==$POETRY_VERSION"
 
 COPY pyproject.toml poetry.lock ./

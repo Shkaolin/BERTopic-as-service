@@ -22,12 +22,12 @@ repos:
         entry: poetry run flakehell lint
         types: [python]
 
-      - id: mypy
-        name: mypy
-        stages: [commit]
-        language: system
-        entry: poetry run mypy --config-file pyproject.toml
-        types: [python]
+      # - id: mypy
+      #   name: mypy
+      #   stages: [commit]
+      #   language: system
+      #   entry: poetry run mypy --config-file pyproject.toml
+      #   types: [python]
 
       # - id: pytest
       #   name: pytest
