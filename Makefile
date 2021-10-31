@@ -25,7 +25,10 @@ black: ## Format code with black
 isort: ## Check sorting with black
 	poetry run isort ${APP_PATH}
 
-check-code: flake black isort ## Run all code checks
+mypy: ## Check sorting with black
+	poetry run mypy ${APP_PATH}
+
+check-code: flake black isort mypy ## Run all code checks
 
 build: ## Build compose
 	docker-compose build
