@@ -7,8 +7,12 @@ services:
     command: bash -c 'while !</dev/tcp/minio/9000; do sleep 1; done; uvicorn service.main:app --host 0.0.0.0'
     ports:
       - 8008:8000
-    env_file:
-      ./.env
+    environment:
+      MINIO_URL: http://minio:9000
+      MINIO_REGION_NAME: berttopic
+      MINIO_BUCKET_NAME: default_bucket
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       - .:/app
     depends_on:
@@ -17,13 +21,20 @@ services:
     container_name: minio
     hostname: minio
     image: quay.io/minio/minio:latest
-    entrypoint: sh
-    command: -c 'mkdir -p /data/${MINIO_BUCKET_NAME} && /opt/bin/minio server --console-address ":9001" /data'
+    entrypoint: >
+      /bin/sh -c "
+      mkdir -p /data/${MINIO_BUCKET_NAME};
+      /opt/bin/minio server --console-address ':9001' /data"
     ports:
       - "9000:9000"
       - "9001:9001"
-    env_file:
-      ./.env
+    environment:
+      MINIO_REGION_NAME: berttopic
+      MINIO_BUCKET_NAME: default_bucket
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     volumes:
       - data:/data:rw
     healthcheck:
@@ -31,6 +42,24 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+  mc:
+    container_name: mc
+    image: quay.io/minio/mc
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+    entrypoint: >
+      /bin/sh -c "
+      while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done;
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+      /usr/bin/mc admin user add myminio ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+      /usr/bin/mc admin policy set myminio readwrite user=${MINIO_ACCESS_KEY};
+      exit 0;"
+    depends_on:
+      - minio
 
 volumes:
   data:
