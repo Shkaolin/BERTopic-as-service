@@ -50,8 +50,8 @@ jobs:
         docker-compose run --rm --no-deps bertopic make check-code
     
     - name: Show mc log
-    run: |
-      docker logs mc
+      run: |
+        docker logs mc
     
     - name: Run integration tests
       run: |
