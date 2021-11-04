@@ -1,4 +1,4 @@
-.PHONY: flake black test isort check-code build up down test
+.PHONY: flake black test isort mypy check-code build up down test
 .DEFAULT_GOAL := help
 APP_PATH := service
 
@@ -22,10 +22,10 @@ flake: ## Check formatting with flake8
 black: ## Format code with black
 	poetry run black ${APP_PATH}
 
-isort: ## Check sorting with black
+isort: ## Check sorting with isort
 	poetry run isort ${APP_PATH}
 
-mypy: ## Check sorting with black
+mypy: ## Check typing with mypy
 	poetry run mypy ${APP_PATH}
 
 check-code: flake black isort mypy ## Run all code checks
