@@ -7,6 +7,7 @@ from sqlmodel import Field, Relationship, SQLModel
 
 class TopicModelBase(SQLModel):
     model_id: UUID
+    version: int = 1
 
 
 class TopicModel(TopicModelBase, table=True):
