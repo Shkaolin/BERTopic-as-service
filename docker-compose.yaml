@@ -13,10 +13,17 @@ services:
       MINIO_BUCKET_NAME: default_bucket
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: bertopic
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - .:/app
     depends_on:
       - minio
+      - db
+
   minio:
     container_name: minio
     hostname: minio
@@ -61,5 +68,20 @@ services:
     depends_on:
       - minio
 
+  db:
+    container_name: db
+    image: postgres
+    restart: always
+    ports:
+     - 5432:5432
+    environment:
+      POSTGRES_DB: bertopic
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+     - pg_data:/var/lib/postgresql/data
+    
+
 volumes:
   data:
+  pg_data:

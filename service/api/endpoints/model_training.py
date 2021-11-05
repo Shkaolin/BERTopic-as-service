@@ -6,23 +6,20 @@ import uuid
 import joblib
 from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
+from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
-from fastapi.params import Depends, Query
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
+from sqlalchemy.exc import NoResultFound
+from sqlalchemy.orm import selectinload
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.api import deps
 from service.core.config import settings
-from service.schemas.base import (
-    Input,
-    ModelId,
-    ModelPrediction,
-    NotEmptyInput,
-    Topic,
-    TopicTopWords,
-    Word,
-)
+from service.models import models
+from service.schemas.base import Input, ModelId, ModelPrediction, NotEmptyInput
 
 router = APIRouter()
 
@@ -43,18 +40,37 @@ async def load_model(s3: ClientCreatorContext, model_id: UUID4) -> BERTopic:
 
 
 async def save_model(s3: ClientCreatorContext, topic_model: BERTopic) -> uuid.UUID:
-    model_id = str(uuid.uuid4())
+    model_id = uuid.uuid4()
 
     with io.BytesIO() as f:
         joblib.dump(topic_model, f)
         f.seek(0)
-        await s3.put_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_id, Body=f.read())
+        await s3.put_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id), Body=f.read())
     return model_id
 
 
+async def save_topics(
+    topic_model: BERTopic, session: AsyncSession, model: models.TopicModel
+) -> None:
+    topic_info = topic_model.get_topics()
+    for topic_index, top_words in topic_info.items():
+        topic = models.Topic(
+            name=topic_model.topic_names[topic_index],
+            count=topic_model.topic_sizes[topic_index],
+            topic_index=topic_index,
+            topic_model=model,
+            top_words=[models.Word(name=w[0], score=w[1]) for w in top_words],
+        )
+        session.add(topic)
+    await session.commit()
+
+
 @router.post("/fit", summary="Run topic modeling", response_model=ModelId)
-async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> ModelId:
-    model_id = str(uuid.uuid4())
+async def fit(
+    data: Input,
+    s3: ClientCreatorContext = Depends(deps.get_s3),
+    session: AsyncSession = Depends(deps.get_db_async),
+) -> ModelId:
     topic_model = BERTopic()
     if data.texts:
         topics, probs = topic_model.fit_transform(data.texts)
@@ -65,6 +81,11 @@ async def fit(data: Input, s3: ClientCreatorContext = Depends(deps.get_s3)) -> M
         topics, probs = topic_model.fit_transform(docs)
 
     model_id = await save_model(s3, topic_model)
+    model = models.TopicModel(model_id=model_id)
+    session.add(model)
+    await session.commit()
+    await session.refresh(model)
+    await save_topics(topic_model, session, model)
     return ModelId(model_id=model_id)
 
 
@@ -84,45 +105,57 @@ async def predict(
 
 
 @router.get("/models", summary="Get all existing model ids", response_model=List[str])
-async def list_models(s3: ClientCreatorContext = Depends(deps.get_s3)):
-    paginator = s3.get_paginator("list_objects")
-    async for result in paginator.paginate(Bucket=settings.MINIO_BUCKET_NAME):
-        return [x["Key"] for x in result.get("Contents", [])]
+async def list_models(
+    session: AsyncSession = Depends(deps.get_db_async),
+) -> List[str]:
+    return [
+        str(r.model_id) for r in (await session.execute(select(models.TopicModel))).scalars().all()
+    ]
 
 
-@router.get("/topics", summary="Get topics", response_model=List[TopicTopWords])
+@router.get("/topics", summary="Get topics", response_model=List[models.TopicWithWords])
 async def get_topics(
-    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
-) -> List[TopicTopWords]:
-    topic_model = await load_model(s3, model_id)
-    topic_info = topic_model.get_topics()
-    topics = []
-    for topic_id, top_words in topic_info.items():
-        topic = TopicTopWords(
-            name=topic_model.topic_names[topic_id],
-            topic_id=topic_id,
-            top_words=[Word(name=w[0], score=w[1]) for w in top_words],
+    model_id: UUID4 = Query(...), session: AsyncSession = Depends(deps.get_db_async)
+) -> List[models.TopicWithWords]:
+    result = await session.execute(
+        select(models.Topic)
+        .filter(models.TopicModel.model_id == model_id)
+        .order_by(-models.Topic.count)
+        .options(selectinload(models.Topic.top_words))
+    )
+    return result.scalars().all()
+
+
+@router.get("/topics_info", summary="Get topics info", response_model=List[models.TopicBase])
+async def get_topics_info(
+    model_id: UUID4 = Query(...), session: AsyncSession = Depends(deps.get_db_async)
+) -> List[models.Topic]:
+    return (
+        (
+            await session.execute(
+                select(models.Topic)
+                .filter(models.TopicModel.model_id == model_id)
+                .order_by(-models.Topic.count)
+            )
         )
-        topics.append(topic)
-    return topics
-
-
-@router.get("/topics_info", summary="Get topics info", response_model=List[Topic])
-async def get_topic_info(
-    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
-) -> List[dict]:
-    topic_model = await load_model(s3, model_id)
-    topic_info = topic_model.get_topic_info()
-    topic_info.columns = topic_info.columns.str.lower()
-    return topic_info.to_dict("records")
+        .scalars()
+        .all()
+    )
 
 
 @router.get("/remove_model", summary="Remove topic model")
 async def remove_model(
-    model_id: UUID4 = Query(...), s3: ClientCreatorContext = Depends(deps.get_s3)
+    model_id: UUID4 = Query(...),
+    s3: ClientCreatorContext = Depends(deps.get_s3),
+    session: AsyncSession = Depends(deps.get_db_async),
 ) -> str:
     try:
+        statement = select(models.TopicModel).filter(models.TopicModel.model_id == model_id)
+        model = (await session.execute(statement)).scalars().first()
+        await session.delete(model)
+        await session.commit()
+
         await s3.delete_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
-    except s3.exceptions.NoSuchKey:
+    except (NoResultFound, s3.exceptions.NoSuchKey):
         raise HTTPException(status_code=404, detail="Model not found")
     return "ok"

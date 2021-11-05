@@ -17,6 +17,11 @@ env:
   MINIO_ACCESS_KEY: ${{ secrets.MINIO_ACCESS_KEY }}
   MINIO_SECRET_KEY: ${{ secrets.MINIO_SECRET_KEY }}
   DOCKER_BUILDKIT: 1
+  POSTGRES_HOST: db
+  POSTGRES_PORT: 5432
+  POSTGRES_DB: bertopic
+  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
 
 jobs:
   build:
@@ -43,7 +48,6 @@ jobs:
     - name: Run code checks
       run: |
         docker-compose run --rm --no-deps bertopic make check-code
-
     - name: Run integration tests
       run: |
         make test
