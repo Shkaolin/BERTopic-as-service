@@ -48,7 +48,6 @@ jobs:
     - name: Run code checks
       run: |
         docker-compose run --rm --no-deps bertopic make check-code
-    
     - name: Run integration tests
       run: |
         make test
