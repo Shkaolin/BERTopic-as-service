@@ -22,7 +22,8 @@ env:
   POSTGRES_DB: bertopic
   POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
   POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  IMAGE_TAG: shkaolin/bertopic-as-service:latest
+  REGISTRY: ghcr.io
+  IMAGE: shkaolin/bertopic-as-service:latest
 
 jobs:
   build:
@@ -35,20 +36,17 @@ jobs:
       - name: Log in to GitHub Docker Registry
         uses: docker/login-action@v1
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE }} || true
       - name: Build
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          load: true
-          tags: ${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        run: |
+          docker buildx build -t ${{ env.IMAGE }} --cache-from ${{ env.REGISTRY }}/${{ env.IMAGE }}
       - name: Start services
         run: |
-          docker pull ${{ env.IMAGE_TAG }} || true
           docker images
           make up
       - name: Run code checks
