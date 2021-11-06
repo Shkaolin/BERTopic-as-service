@@ -30,9 +30,25 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - run: docker --version
-      - run: docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
-      - run: docker pull $REGISTRY/$IMAGE:latest || true
-      - run: docker build . -t thing --cache-from=$REGISTRY/$IMAGE:latest
-      - run: docker tag thing $REGISTRY/$IMAGE:latest && docker push $REGISTRY/$IMAGE:latest || true
+      -
+        name: Checkout
+        uses: actions/checkout@v2
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      -
+        name: Login to DockerHub
+        uses: docker/login-action@v1 
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      -
+        name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          tags: shkaolin/bertopic-as-service:latest
+          cache-from: type=registry,ref=shkaolin/bertopic-as-service:buildcache
+          cache-to: type=registry,ref=shkaolin/bertopic-as-service:buildcache,mode=max
