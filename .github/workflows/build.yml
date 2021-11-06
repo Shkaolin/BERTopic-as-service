@@ -39,12 +39,9 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pull
-        run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE }} || true
       - name: Build
         run: |
-          docker buildx build -t ${{ env.IMAGE }} --cache-from ${{ env.REGISTRY }}/${{ env.IMAGE }}
+          docker buildx build -t ${{ env.IMAGE }} --cache-from ${{ env.REGISTRY }}/${{ env.IMAGE }} .
       - name: Start services
         run: |
           docker images
