@@ -37,7 +37,7 @@ jobs:
           docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
       - name: Build
         run: |
-          docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
+          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
       - name: Start services
         run: |
           docker-compose up -d
