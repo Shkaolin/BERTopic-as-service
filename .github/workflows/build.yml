@@ -32,18 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Log in to GitHub Docker Registry
-        run: |
-          docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
-      - name: Build
-        run: |
-          DOCKER_BUILDKIT=1 COMPOSE_DOCKER_CLI_BUILD=1 docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
-      - name: Start services
-        run: |
-          docker-compose up -d
-      - name: Run code checks
-        run: |
-          docker-compose run --rm --no-deps bertopic make check-code
-      - name: Run integration tests
-        run: |
-          make test
+      - name: Test
+        - run: docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
+        - run: docker pull $REGISTRY/$IMAGE:latest || true
+        - run: docker build . -t thing --cache-from=$REGISTRY/$IMAGE:latest
+        - run: docker tag thing $REGISTRY/$IMAGE:latest && docker push $REGISTRY/$IMAGE:latest || true
