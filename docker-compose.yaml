@@ -3,7 +3,11 @@ version: '3.7'
 services:
   bertopic:
     container_name: bertopic
-    build: .
+    build:
+      context: .
+      cache_from:
+        - ghcr.io/shkaolin/bertopic-as-service:latest
+    image: ghcr.io/shkaolin/bertopic-as-service:latest
     command: bash -c 'while !</dev/tcp/minio/9000; do sleep 1; done; uvicorn service.main:app --host 0.0.0.0'
     ports:
       - 8008:8000
@@ -49,6 +53,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
   mc:
     container_name: mc
     image: quay.io/minio/mc
