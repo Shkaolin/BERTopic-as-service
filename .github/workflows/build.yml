@@ -40,14 +40,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull
-        run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE }} || true
-      - name: Build
-        run: |
-          docker images
-          docker build -t ${{ env.IMAGE }} --cache-from ${{ env.REGISTRY }}/${{ env.IMAGE }} .
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          load: true
+          tags: ${{ env.IMAGE }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: Start services
         run: |
+          docker buildx bake
           make up
       - name: Run code checks
         run: |
