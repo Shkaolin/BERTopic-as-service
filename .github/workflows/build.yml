@@ -46,11 +46,10 @@ jobs:
           tags: ${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      - name: Inspect
-        run: |
-          docker image inspect ${{ env.IMAGE_TAG }}
       - name: Start services
         run: |
+          docker pull ${{ env.IMAGE_TAG }} || true
+          docker images
           make up
       - name: Run code checks
         run: |
