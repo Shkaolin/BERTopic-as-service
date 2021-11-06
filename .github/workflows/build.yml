@@ -33,11 +33,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Log in to GitHub Docker Registry
-        uses: docker/login-action@v1
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
+      - name: Build
+        run: |
+          docker pull ${REGISTRY}/${IMAGE}:latest || true
       - name: Build
         run: |
           docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
@@ -50,5 +50,3 @@ jobs:
       - name: Run integration tests
         run: |
           make test
-      - name: Push
-        run: docker push $REGISTRY/$IMAGE:latest
