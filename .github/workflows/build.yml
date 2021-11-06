@@ -37,9 +37,6 @@ jobs:
           docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
       - name: Build
         run: |
-          docker pull ${REGISTRY}/${IMAGE}:latest || true
-      - name: Build
-        run: |
           docker-compose build --build-arg BUILDKIT_INLINE_CACHE=1
       - name: Start services
         run: |
