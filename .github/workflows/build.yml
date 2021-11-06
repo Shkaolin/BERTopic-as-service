@@ -31,6 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - run: docker --version
       - run: docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
       - run: docker pull $REGISTRY/$IMAGE:latest || true
       - run: docker build . -t thing --cache-from=$REGISTRY/$IMAGE:latest
