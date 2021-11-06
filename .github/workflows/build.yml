@@ -51,4 +51,4 @@ jobs:
         run: |
           make test
       - name: Push
-        run: docker push $IMAGE:latest
+        run: docker push $REGISTRY/$IMAGE:latest
