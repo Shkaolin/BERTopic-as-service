@@ -50,3 +50,5 @@ jobs:
       - name: Run integration tests
         run: |
           make test
+      - name: Push
+        run: docker push $IMAGE:latest
