@@ -30,10 +30,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Test
-        - run: docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
-        - run: docker pull $REGISTRY/$IMAGE:latest || true
-        - run: docker build . -t thing --cache-from=$REGISTRY/$IMAGE:latest
-        - run: docker tag thing $REGISTRY/$IMAGE:latest && docker push $REGISTRY/$IMAGE:latest || true
+      - uses: actions/checkout@v2
+      - run: docker login ghcr.io -u ${{ secrets.REGISTRY_USER }} -p ${{ secrets.REGISTRY_PASS }}
+      - run: docker pull $REGISTRY/$IMAGE:latest || true
+      - run: docker build . -t thing --cache-from=$REGISTRY/$IMAGE:latest
+      - run: docker tag thing $REGISTRY/$IMAGE:latest && docker push $REGISTRY/$IMAGE:latest || true
