@@ -15,6 +15,6 @@ RUN apt-get update \
   && apt-get -y install gcc make curl \
   && pip install "poetry==$POETRY_VERSION"
 
-# COPY pyproject.toml poetry.lock ./
-# RUN poetry config virtualenvs.create false \
-#   && poetry install --no-interaction --no-ansi
+COPY pyproject.toml poetry.lock ./
+RUN poetry config virtualenvs.create false \
+  && poetry install --no-interaction --no-ansi
