@@ -2,9 +2,12 @@ version: '3.7'
 
 services:
   bertopic:
-    image: ghcr.io/shkaolin/bertopic-as-service:latest
     container_name: bertopic
-    command: bash -c 'while !</dev/tcp/minio/9000; do sleep 1; done; uvicorn service.main:app --host 0.0.0.0'
+    image: ghcr.io/shkaolin/bertopic-as-service:latest
+    command: >
+      bash -c "
+      while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done;
+      uvicorn service.main:app --host 0.0.0.0"
     ports:
       - 8008:8000
     environment:
