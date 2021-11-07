@@ -34,7 +34,7 @@ jobs:
       - uses: whoan/docker-build-with-cache-action@v5
         with:
           username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_PASS }}
-          registry: $REGISTRY
-          image_name: $IMAGE:cache
+          password: "${{ secrets.REGISTRY_PASS }}"
+          registry: ghcr.io
+          image_name: shkaolin/bertopic-as-service:cache
           push_image_and_stages: false
