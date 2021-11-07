@@ -16,5 +16,10 @@ RUN apt-get update \
   && pip install "poetry==$POETRY_VERSION"
 
 COPY pyproject.toml poetry.lock ./
+
 RUN poetry config virtualenvs.create false \
-  && poetry install --no-interaction --no-ansi
+  && poetry export --without-hashes -f requirements.txt --dev \
+  |  poetry run pip install -r /dev/stdin \
+  && poetry debug
+
+RUN poetry install --no-interaction
