@@ -2,8 +2,8 @@ version: '3.7'
 
 services:
   bertopic:
+    image: ghcr.io/shkaolin/bertopic-as-service:latest
     container_name: bertopic
-    build: .
     command: bash -c 'sleep 10000000'
     ports:
       - 8008:8000

@@ -55,7 +55,7 @@ jobs:
         with:
           push: false
           load: true
-          tags: shkaolin/bertopic-as-service:latest
+          tags: ghcr.io/shkaolin/bertopic-as-service:latest
           builder: ${{ steps.buildx.outputs.name }}
           file: ./Dockerfile
           context: .
