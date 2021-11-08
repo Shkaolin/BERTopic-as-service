@@ -71,9 +71,7 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           message: |
-            master brach was updated, congratulations :tada::tada::tada::
-
-            *PR*: ${{ github.event.pull_request.title }}
+            🎉 master brach was updated, congratulations!
 
             *Repository*: ${{ github.repository }}
             
