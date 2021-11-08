@@ -59,3 +59,19 @@ jobs:
             *Repository*: ${{ github.repository }}
             
             *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is closed
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🔒 *${{ github.actor }}* closed PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+            
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
