@@ -34,8 +34,9 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           photo: 'https://tenor.com/r1mn.gif'
+          sticker: 'https://tenor.com/boMXA.gif'
           message: |
-            *${{ github.actor }}* created PR:
+            *${{ github.actor }}* updated PR:
 
             *PR*: ${{ github.event.pull_request.title }}
 
