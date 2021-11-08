@@ -39,7 +39,7 @@ jobs:
 
       - name: Pull image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest || true
 
       - name: Build image
         run: |
@@ -58,6 +58,7 @@ jobs:
           make test
 
       - name: Push image
+        if: ${{ github.event_name == 'push' }}
         run: |
           docker tag bertopic-as-service:latest ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
           docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
