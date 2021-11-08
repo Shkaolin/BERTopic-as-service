@@ -73,8 +73,8 @@ jobs:
           message: |
             master brach was updated, congratulations :tada::tada::tada::
 
-            **PR**: ${{ github.event.pull_request.title }}
+            *PR*: ${{ github.event.pull_request.title }}
 
-            **Repository**: ${{ github.repository }}
+            *Repository*: ${{ github.repository }}
             
-            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}

@@ -18,13 +18,13 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           message: |
-            **${{ github.actor }}** created PR:
+            *${{ github.actor }}* created PR:
 
-            **PR**: ${{ github.event.pull_request.title }}
+            *PR*: ${{ github.event.pull_request.title }}
 
-            **Repository**: ${{ github.repository }}
+            *Repository*: ${{ github.repository }}
             
-            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
 
       - name: PR is updated
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
@@ -33,12 +33,12 @@ jobs:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
-          photo: https://tenor.com/r1mn.gif
+          photo: 'https://tenor.com/r1mn.gif'
           message: |
-            **${{ github.actor }}** created PR:
+            *${{ github.actor }}* created PR:
 
-            **PR**: ${{ github.event.pull_request.title }}
+            *PR*: ${{ github.event.pull_request.title }}
 
-            **Repository**: ${{ github.repository }}
+            *Repository*: ${{ github.repository }}
             
-            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
