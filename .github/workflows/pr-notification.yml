@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: PR is opened
-        if: ${{ github.event_name == 'pull_request' && github.types == 'opened' }}
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
@@ -27,7 +27,7 @@ jobs:
             **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
 
       - name: PR is updated
-        if: ${{ github.event_name == 'pull_request' && github.types == 'synchronize' }}
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
