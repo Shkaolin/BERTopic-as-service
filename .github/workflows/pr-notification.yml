@@ -18,9 +18,9 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           message: |
-            *${{ github.actor }}* created PR:
+            :sparkles: *${{ github.actor }}* created PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
 
-            *PR*: ${{ github.event.pull_request.title }}
+            *Title*: ${{ github.event.pull_request.title }}
 
             *Repository*: ${{ github.repository }}
             
@@ -34,11 +34,29 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: markdown
           photo: 'https://tenor.com/r1mn.gif'
-          sticker: 'https://tenor.com/boMXA.gif'
+          sticker: 'https://tenor.com/view/kung-fu-fighting-punch-choy-li-fut-mma-gif-18262064'
           message: |
-            *${{ github.actor }}* updated PR:
+            :pencil: *${{ github.actor }}* updated PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
 
-            *PR*: ${{ github.event.pull_request.title }}
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+            
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is ready for review
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'ready_for_review' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          photo: 'https://tenor.com/r1mn.gif'
+          sticker: 'https://tenor.com/view/kung-fu-fighting-punch-choy-li-fut-mma-gif-18262064'
+          message: |
+            :pencil: PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}) is ready for review:
+
+            *Title*: ${{ github.event.pull_request.title }}
 
             *Repository*: ${{ github.repository }}
             
