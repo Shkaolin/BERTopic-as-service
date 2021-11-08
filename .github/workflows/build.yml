@@ -63,30 +63,18 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Send telegram message on PR
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_TO }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            ${{ github.actor }} created/updated PR:
-            PR: ${{ github.event.pull_request.title }}
-
-            Commit message: ${{ github.event.commits[0].message }}
-            
-            Repository: ${{ github.repository }}
-            
-            See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
-
       - name: Send telegram message on merging to master
         if: ${{ github.event_name == 'push' }}
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_TO }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
           message: |
             master brach was updated, congratulations :tada::tada::tada::
-            PR: ${{ github.event.pull_request.title }}
+
+            **PR**: ${{ github.event.pull_request.title }}
+
+            **Repository**: ${{ github.repository }}
             
-            Repository: ${{ github.repository }}
+            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}

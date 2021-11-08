@@ -1,0 +1,44 @@
+name: pr-notification
+
+on:
+  pull_request:
+    types: [ opened, closed, synchronize, reopened, ready_for_review ]
+  pull_request_review:
+    types: [ submitted ]
+
+jobs:
+  notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR is opened
+        if: ${{ github.event_name == 'pull_request' && github.types == 'opened' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            **${{ github.actor }}** created PR:
+
+            **PR**: ${{ github.event.pull_request.title }}
+
+            **Repository**: ${{ github.repository }}
+            
+            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is updated
+        if: ${{ github.event_name == 'pull_request' && github.types == 'synchronize' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          photo: https://tenor.com/r1mn.gif
+          message: |
+            **${{ github.actor }}** created PR:
+
+            **PR**: ${{ github.event.pull_request.title }}
+
+            **Repository**: ${{ github.repository }}
+            
+            **See changes**: https://github.com/${{ github.repository }}/commit/${{github.sha}}
