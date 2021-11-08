@@ -4,6 +4,7 @@ import io
 import uuid
 
 import joblib
+import numpy as np
 from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
 from fastapi import Depends, Query
@@ -11,6 +12,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
+from sqlalchemy import func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -23,7 +25,6 @@ from service.schemas.base import (
     DocsWithPredictions,
     FitResult,
     Input,
-    ModelId,
     ModelPrediction,
     NotEmptyInput,
 )
@@ -83,7 +84,11 @@ async def save_topics(
         session.add(topic)
 
 
-@router.post("/fit", summary="Run topic modeling", response_model=ModelId)
+def get_sample_dataset():
+    return fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"][:100]
+
+
+@router.post("/fit", summary="Run topic modeling", response_model=FitResult)
 async def fit(
     data: Input,
     s3: ClientCreatorContext = Depends(deps.get_s3),
@@ -93,9 +98,7 @@ async def fit(
     if data.texts:
         topics, probs = topic_model.fit_transform(data.texts)
     else:
-        docs = fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"][
-            :100
-        ]
+        docs = get_sample_dataset()
         topics, probs = topic_model.fit_transform(docs)
 
     model_id = await save_model(s3, topic_model)
@@ -127,7 +130,7 @@ async def predict(
 @router.post(
     "/reduce_topics",
     summary="Reduce number of topics in existing model",
-    response_model=ModelPrediction,
+    response_model=FitResult,
 )
 async def reduce_topics(
     data: DocsWithPredictions,
@@ -136,25 +139,37 @@ async def reduce_topics(
     num_topics: int = Query(...),
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
-) -> ModelPrediction:
+) -> FitResult:
     topic_model = await load_model(s3, model_id, version)
     if len(topic_model.get_topics()) < num_topics:
         raise HTTPException(
             status_code=400, detail=f"num_topics must be less than {len(topic_model.get_topics())}"
         )
 
+    if len(data.texts) == 0:
+        data.texts = get_sample_dataset()
     topics, probs = topic_model.reduce_topics(
-        docs=data.texts, topics=data.topics, probabilities=data.probabilities, nr_topics=num_topics
+        docs=data.texts,
+        topics=data.topics,
+        probabilities=np.array(data.probabilities),
+        nr_topics=num_topics,
     )
-    model_id = await save_model(s3, topic_model, model_id, version + 1)
-    model = models.TopicModel(model_id=model_id, version=version + 1)
+    current_max_version = (
+        await session.execute(
+            select(models.TopicModel)
+            .filter(models.TopicModel.model_id == model_id)
+            .with_only_columns(func.max(models.TopicModel.version))
+        )
+    ).scalar() or 0
+    model_id = await save_model(s3, topic_model, model_id, current_max_version + 1)
+    model = models.TopicModel(model_id=model_id, version=current_max_version + 1)
     session.add(model)
     await save_topics(topic_model, session, model)
     await session.commit()
 
     return FitResult(
         model_id=model_id,
-        version=version + 1,
+        version=current_max_version + 1,
         predictions=ModelPrediction(topics=topics, probabilities=probs.tolist()),
     )
 
@@ -176,6 +191,7 @@ async def get_topics(
 ) -> List[models.TopicWithWords]:
     result = await session.execute(
         select(models.Topic)
+        .join(models.TopicModel)
         .filter(models.TopicModel.model_id == model_id, models.TopicModel.version == version)
         .order_by(-models.Topic.count)
         .options(selectinload(models.Topic.top_words))
@@ -193,6 +209,7 @@ async def get_topics_info(
         (
             await session.execute(
                 select(models.Topic)
+                .join(models.TopicModel)
                 .filter(
                     models.TopicModel.model_id == model_id, models.TopicModel.version == version
                 )

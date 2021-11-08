@@ -26,5 +26,5 @@ class FitResult(ModelId):
     predictions: ModelPrediction
 
 
-class DocsWithPredictions(NotEmptyInput, ModelPrediction):
+class DocsWithPredictions(Input, ModelPrediction):
     ...

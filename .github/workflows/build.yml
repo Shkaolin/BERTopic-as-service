@@ -47,7 +47,7 @@ jobs:
 
       - name: Start services
         run: |
-          docker-compose up -d --no-build
+          docker-compose up -d --no-build --scale bertopic=0
 
       - name: Run code checks
         run: |

@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from uuid import UUID
 
+from sqlalchemy.sql.schema import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -12,6 +13,7 @@ class TopicModelBase(SQLModel):
 
 class TopicModel(TopicModelBase, table=True):
     __tablename__ = "topic_model"
+    __table_args__ = (UniqueConstraint("model_id", "version", name="_model_id_version_uc"),)
 
     id: Optional[int] = Field(default=None, primary_key=True)  # NOQA: A003
     topics: List["Topic"] = Relationship(
