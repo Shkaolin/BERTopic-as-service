@@ -57,8 +57,6 @@ jobs:
             *Title*: ${{ github.event.pull_request.title }}
 
             *Repository*: ${{ github.repository }}
-            
-            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
 
       - name: PR is closed
         if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
@@ -73,5 +71,31 @@ jobs:
             *Title*: ${{ github.event.pull_request.title }}
 
             *Repository*: ${{ github.repository }}
-            
-            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is reopened
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'reopened' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🔓 *${{ github.actor }}* reopened PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+
+      - name: PR is approved
+        if: ${{ github.event_name == 'pull_request_review' && github.event.action == 'submitted' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            👍 *${{ github.actor }}* approved PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
