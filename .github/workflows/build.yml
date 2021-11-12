@@ -43,7 +43,7 @@ jobs:
 
       - name: Start services
         run: |
-          make up
+          make up-dev
 
       - name: Run code checks
         run: |

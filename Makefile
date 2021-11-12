@@ -36,6 +36,9 @@ build: ## Build compose
 up: ## Start compose
 	docker-compose up -d
 
+up-dev: ## Start all services except bertopic
+	docker-compose up -d --build --scale bertopic=0
+
 down: ## Down compose
 	docker-compose down
 
