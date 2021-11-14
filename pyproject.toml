@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "BERTopic-as-service"
-version = "0.1.0"
+version = "0.2.0"
 homepage = "https://github.com/SergeyShk/bertopic-as-service"
 repository = "https://github.com/SergeyShk/bertopic-as-service"
 documentation = "https://github.com/SergeyShk/bertopic-as-service"
@@ -100,3 +100,7 @@ pep8-naming = ["+*"]
 [tool.pytest.ini_options]
 addopts = "-vv -x --lf"
 testpaths = ["tests"]
+markers = [
+    "unit: unit tests",
+    "slow: integration tests",
+]
