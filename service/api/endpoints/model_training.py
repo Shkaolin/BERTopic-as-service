@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import io
 import uuid
@@ -92,10 +92,29 @@ def get_sample_dataset():
 @router.post("/fit", summary="Run topic modeling", response_model=FitResult)
 async def fit(
     data: Input,
+    language: str = "english",
+    top_n_words: int = 10,
+    nr_topics: Optional[Union[int, str]] = None,
+    calculate_probabilities: bool = True,
+    seed_topic_list: Optional[Dict[str, Any]] = None,
+    vectorizer_params: Optional[Dict[str, Any]] = None,
+    umap_params: Optional[Dict[str, Any]] = None,
+    hdbscan_params: Optional[Dict[str, Any]] = None,
+    verbose: bool = False,
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = BERTopicWrapper(calculate_probabilities=True).model
+    topic_model = BERTopicWrapper(
+        language=language,
+        top_n_words=top_n_words,
+        nr_topics=nr_topics,
+        calculate_probabilities=calculate_probabilities,
+        seed_topic_list=seed_topic_list,
+        vectorizer_params=vectorizer_params,
+        umap_params=umap_params,
+        hdbscan_params=hdbscan_params,
+        verbose=verbose,
+    ).model
     if data.texts:
         topics, probs = topic_model.fit_transform(data.texts)
     else:
