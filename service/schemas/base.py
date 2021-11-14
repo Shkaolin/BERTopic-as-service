@@ -14,8 +14,17 @@ class NotEmptyInput(BaseModel):
 
 class ModelId(BaseModel):
     model_id: UUID4
+    version: int = 1
 
 
 class ModelPrediction(BaseModel):
     topics: List[int]
     probabilities: Optional[List[List[float]]]
+
+
+class FitResult(ModelId):
+    predictions: ModelPrediction
+
+
+class DocsWithPredictions(Input, ModelPrediction):
+    ...

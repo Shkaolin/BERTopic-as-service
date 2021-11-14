@@ -1,0 +1,101 @@
+name: pr-notification
+
+on:
+  pull_request:
+    types: [ opened, closed, synchronize, reopened, ready_for_review ]
+  pull_request_review:
+    types: [ submitted ]
+
+jobs:
+  notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR is opened
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ✨ *${{ github.actor }}* created PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+            
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is updated
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'synchronize' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          photo: 'https://tenor.com/r1mn.gif'
+          sticker: 'https://tenor.com/view/kung-fu-fighting-punch-choy-li-fut-mma-gif-18262064'
+          message: |
+            ✏️ *${{ github.actor }}* updated PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+            
+            *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}
+
+      - name: PR is ready for review
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'ready_for_review' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            ✅ PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}) is ready for review:
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+
+      - name: PR is closed
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'closed' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🔒 *${{ github.actor }}* closed PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+
+      - name: PR is reopened
+        if: ${{ github.event_name == 'pull_request' && github.event.action == 'reopened' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            🔓 *${{ github.actor }}* reopened PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
+
+      - name: PR is approved
+        if: ${{ github.event_name == 'pull_request_review' && github.event.action == 'submitted' }}
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: markdown
+          message: |
+            👍 *${{ github.actor }}* approved PR [#${{ github.event.pull_request.number }}](https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}):
+
+            *Title*: ${{ github.event.pull_request.title }}
+
+            *Repository*: ${{ github.repository }}
