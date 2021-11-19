@@ -4,7 +4,12 @@ from hdbscan import HDBSCAN
 from sklearn.feature_extraction.text import CountVectorizer
 from umap import UMAP
 
-from service.schemas.bertopic_wrapper import BERTopicWrapper
+from service.schemas.bertopic_wrapper import (
+    BERTopicWrapper,
+    HDBSCANParams,
+    UMAPParams,
+    VectorizerParams,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -18,11 +23,11 @@ class TestBERTopicWrapper:
         vectorizer_params = {
             "lowercase": False,
             "stop_words": ["foo"],
-            "ngram_range": (1, 2),
+            "ngram_range": [1, 2],
             "max_df": 5,
             "min_df": 2,
         }
-        wrapper = BERTopicWrapper(vectorizer_params=vectorizer_params)
+        wrapper = BERTopicWrapper(vectorizer_params=VectorizerParams.parse_obj(vectorizer_params))
         assert type(wrapper.vectorizer_model) == CountVectorizer
         for param, value in vectorizer_params.items():
             assert getattr(wrapper.vectorizer_model, param) == value
@@ -35,7 +40,7 @@ class TestBERTopicWrapper:
             "learning_rate": 0.1,
             "n_epochs": 5,
         }
-        wrapper = BERTopicWrapper(umap_params=umap_params)
+        wrapper = BERTopicWrapper(umap_params=UMAPParams.parse_obj(umap_params))
         assert type(wrapper.umap_model) == UMAP
         for param, value in umap_params.items():
             assert getattr(wrapper.umap_model, param) == value
@@ -48,7 +53,7 @@ class TestBERTopicWrapper:
             "alpha": 0.1,
             "p": 1,
         }
-        wrapper = BERTopicWrapper(hdbscan_params=hdbscan_params)
+        wrapper = BERTopicWrapper(hdbscan_params=HDBSCANParams.parse_obj(hdbscan_params))
         assert type(wrapper.hdbscan_model) == HDBSCAN
         for param, value in hdbscan_params.items():
             assert getattr(wrapper.hdbscan_model, param) == value
