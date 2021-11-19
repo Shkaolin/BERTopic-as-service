@@ -28,6 +28,7 @@ from service.schemas.base import (
     ModelPrediction,
     NotEmptyInput,
 )
+from service.schemas.bertopic_wrapper import BERTopicWrapper
 
 router = APIRouter()
 
@@ -94,7 +95,17 @@ async def fit(
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = BERTopic(calculate_probabilities=True)
+    topic_model = BERTopicWrapper(
+        language=data.language,
+        top_n_words=data.top_n_words,
+        nr_topics=data.nr_topics,
+        calculate_probabilities=data.calculate_probabilities,
+        seed_topic_list=data.seed_topic_list,
+        vectorizer_params=data.vectorizer_params,
+        umap_params=data.umap_params,
+        hdbscan_params=data.hdbscan_params,
+        verbose=data.verbose,
+    ).model
     if data.texts:
         topics, probs = topic_model.fit_transform(data.texts)
     else:
