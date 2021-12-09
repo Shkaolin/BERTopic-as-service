@@ -1,4 +1,4 @@
-.PHONY: flake black test isort mypy check-code build up down test
+.PHONY: flake black test isort mypy unit check-code build up down test
 .DEFAULT_GOAL := help
 APP_PATH := service
 
@@ -28,7 +28,10 @@ isort: ## Check sorting with isort
 mypy: ## Check typing with mypy
 	poetry run mypy ${APP_PATH}
 
-check-code: flake black isort mypy ## Run all code checks
+unit: ## Run unit tests
+	poetry run pytest -m unit
+
+check-code: flake black isort mypy unit ## Run all code checks
 
 build: ## Build compose
 	docker-compose build
@@ -43,4 +46,4 @@ down: ## Down compose
 	docker-compose down
 
 test: ## Run integration tests
-	docker-compose run --rm --no-deps bertopic pytest
+	docker-compose run --rm --no-deps bertopic pytest -m slow

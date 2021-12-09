@@ -1,3 +1,8 @@
+import pytest
+
+pytestmark = pytest.mark.slow
+
+
 def test_fit(client):
     response = client.post("/fit", json={"texts": []})
     assert response.status_code == 200
