@@ -12,7 +12,6 @@ from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
-from sqlalchemy import func
 from sqlalchemy.exc import NoResultFound
 from sqlmodel.ext.asyncio.session import AsyncSession
 
