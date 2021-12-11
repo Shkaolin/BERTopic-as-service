@@ -46,4 +46,4 @@ down: ## Down compose
 	docker-compose down
 
 test: ## Run integration tests
-	docker-compose run --rm --no-deps bertopic pytest -m slow
+	docker-compose run --rm --no-deps bertopic bash -c "alembic upgrade head && pytest -m slow"

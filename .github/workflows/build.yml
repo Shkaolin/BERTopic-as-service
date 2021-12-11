@@ -49,10 +49,6 @@ jobs:
         run: |
           docker-compose run --rm --no-deps bertopic make check-code
 
-      - name: Run database migrations
-        run: |
-          docker-compose run --rm --no-deps bertopic alembic upgrade head
-
       - name: Run integration tests
         run: |
           make test

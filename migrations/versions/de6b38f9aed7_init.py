@@ -31,7 +31,6 @@ def upgrade():
         sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("count", sa.Integer(), nullable=False),
         sa.Column("topic_index", sa.Integer(), nullable=False),
-        sa.Column("some_field", sa.Integer(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("topic_model_id", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
