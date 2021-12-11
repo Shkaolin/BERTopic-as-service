@@ -51,7 +51,7 @@ jobs:
 
       - name: Run database migrations
         run: |
-          alembic upgrade head
+          docker-compose run --rm --no-deps bertopic alembic upgrade head
 
       - name: Run integration tests
         run: |
