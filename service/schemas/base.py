@@ -8,6 +8,9 @@ from service.schemas.bertopic_wrapper import HDBSCANParams, UMAPParams, Vectoriz
 
 class Input(BaseModel):
     texts: List[str] = []
+
+
+class ModelParams(Input):
     language: str = "english"
     top_n_words: int = 10
     nr_topics: Optional[Union[int, str]] = None

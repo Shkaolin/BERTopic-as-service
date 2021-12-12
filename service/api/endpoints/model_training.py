@@ -22,7 +22,7 @@ from service.models import models
 from service.schemas.base import (
     DocsWithPredictions,
     FitResult,
-    Input,
+    ModelParams,
     ModelPrediction,
     NotEmptyInput,
 )
@@ -89,7 +89,7 @@ def get_sample_dataset():
 
 @router.post("/fit", summary="Run topic modeling", response_model=FitResult)
 async def fit(
-    data: Input,
+    data: ModelParams,
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
