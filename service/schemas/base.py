@@ -49,3 +49,38 @@ class FitResult(ModelId):
 
 class DocsWithPredictions(Input, ModelPrediction):
     ...
+
+
+class IntertopicInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    width: int = 650
+    height: int = 650
+
+
+class BarchartInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: int = 8
+    n_words: int = 5
+    width: int = 250
+    height: int = 250
+
+
+class HierarchyInput(BaseModel):
+    model: ModelId
+    orientation: str = "left"
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    width: int = 1000
+    height: int = 600
+
+
+class HeatmapInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    n_clusters: Optional[int] = None
+    width: int = 800
+    height: int = 800

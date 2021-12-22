@@ -1,6 +1,18 @@
 from fastapi import APIRouter
 
-from service.api.endpoints import model_training
+from service.api.endpoints import model_training, visualization
+
+tags_metadata = [
+    {
+        "name": "model_training",
+        "description": "Model training/observing",
+    },
+    {
+        "name": "visualization",
+        "description": "Topics visualizations",
+    },
+]
 
 api_router = APIRouter()
-api_router.include_router(model_training.router, tags=["model_training"])
+api_router.include_router(model_training.router)
+api_router.include_router(visualization.router)

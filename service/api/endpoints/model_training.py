@@ -30,27 +30,7 @@ from service.schemas.base import (
 )
 from service.schemas.bertopic_wrapper import BERTopicWrapper
 
-router = APIRouter()
-
-
-def get_model_filename(model_id: UUID4, version: int = 1) -> str:
-    return f"{model_id}_{version}"
-
-
-async def load_model(s3: ClientCreatorContext, model_id: uuid.UUID, version: int = 1) -> BERTopic:
-    try:
-        model_name = get_model_filename(model_id, version)
-        response = await s3.get_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name)
-
-        with io.BytesIO() as f:  # double memory usage
-            async with response["Body"] as stream:
-                data = await stream.read()
-                f.write(data)
-                f.seek(0)
-            return joblib.load(f)
-
-    except s3.exceptions.NoSuchKey:
-        raise HTTPException(status_code=404, detail="Model not found")
+router = APIRouter(tags=["model_training"])
 
 
 async def save_model(
@@ -61,7 +41,7 @@ async def save_model(
 ) -> uuid.UUID:
     if model_id is None:
         model_id = uuid.uuid4()
-    model_name = get_model_filename(model_id, version)
+    model_name = deps.get_model_filename(model_id, version)
 
     with io.BytesIO() as f:
         joblib.dump(topic_model, f)
@@ -130,7 +110,7 @@ async def predict(
     calculate_probabilities: bool = Query(default=False),
     s3: ClientCreatorContext = Depends(deps.get_s3),
 ) -> ModelPrediction:
-    topic_model = await load_model(s3, model_id, version)
+    topic_model = await deps.load_model(s3, model_id, version)
     topic_model.calculate_probabilities = calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
     if probabilities is not None:
@@ -151,7 +131,7 @@ async def reduce_topics(
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = await load_model(s3, model_id, version)
+    topic_model = await deps.load_model(s3, model_id, version)
     if len(topic_model.get_topics()) < num_topics:
         raise HTTPException(
             status_code=400, detail=f"num_topics must be less than {len(topic_model.get_topics())}"

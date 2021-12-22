@@ -1,12 +1,39 @@
 from typing import AsyncGenerator, Generator
 
+import io
+import uuid
+
+import joblib
 from aiobotocore.client import AioBaseClient
-from aiobotocore.session import get_session
+from aiobotocore.session import ClientCreatorContext, get_session
+from bertopic import BERTopic
+from fastapi.exceptions import HTTPException
+from pydantic.types import UUID4
 from sqlmodel import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.core.config import settings
 from service.db.db import engine, engine_async
+
+
+def get_model_filename(model_id: UUID4, version: int = 1) -> str:
+    return f"{model_id}_{version}"
+
+
+async def load_model(s3: ClientCreatorContext, model_id: uuid.UUID, version: int = 1) -> BERTopic:
+    try:
+        model_name = get_model_filename(model_id, version)
+        response = await s3.get_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name)
+
+        with io.BytesIO() as f:  # double memory usage
+            async with response["Body"] as stream:
+                data = await stream.read()
+                f.write(data)
+                f.seek(0)
+            return joblib.load(f)
+
+    except s3.exceptions.NoSuchKey:
+        raise HTTPException(status_code=404, detail="Model not found")
 
 
 async def get_s3() -> AsyncGenerator[AioBaseClient, None]:
