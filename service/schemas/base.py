@@ -21,7 +21,7 @@ class Input(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "language": "multilingual",
+                "language": "english",
                 "nr_topics": 3,
                 "vectorizer_params": {"stop_words": ["foo", "bar"], "ngram_range": (1, 2)},
                 "verbose": True,
@@ -51,7 +51,7 @@ class DocsWithPredictions(Input, ModelPrediction):
     ...
 
 
-class IntertopicInput(BaseModel):
+class VisTopicsInput(BaseModel):
     model: ModelId
     topics: Optional[List[int]] = None
     top_n_topics: Optional[int] = None
@@ -59,7 +59,7 @@ class IntertopicInput(BaseModel):
     height: int = 650
 
 
-class BarchartInput(BaseModel):
+class VisBarchartInput(BaseModel):
     model: ModelId
     topics: Optional[List[int]] = None
     top_n_topics: int = 8
@@ -68,7 +68,7 @@ class BarchartInput(BaseModel):
     height: int = 250
 
 
-class HierarchyInput(BaseModel):
+class VisHierarchyInput(BaseModel):
     model: ModelId
     orientation: str = "left"
     topics: Optional[List[int]] = None
@@ -77,10 +77,26 @@ class HierarchyInput(BaseModel):
     height: int = 600
 
 
-class HeatmapInput(BaseModel):
+class VisHeatmapInput(BaseModel):
     model: ModelId
     topics: Optional[List[int]] = None
     top_n_topics: Optional[int] = None
     n_clusters: Optional[int] = None
     width: int = 800
     height: int = 800
+
+
+class VisDistributionInput(BaseModel):
+    model: ModelId
+    probabilities: List[float]
+    min_probability: float = 0.015
+    width: int = 800
+    height: int = 600
+
+
+class VisTermRankInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    log_scale: bool = False
+    width: int = 800
+    height: int = 500
