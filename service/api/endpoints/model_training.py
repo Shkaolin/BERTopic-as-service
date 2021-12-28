@@ -13,7 +13,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.api import deps
-from service.api.utils import get_sample_dataset, save_model, save_topics
+from service.api.utils import get_sample_dataset, load_model, save_model, save_topics
 from service.core.config import settings
 from service.models import models
 from service.schemas.base import (
@@ -61,7 +61,7 @@ async def predict(
     calculate_probabilities: bool = Query(default=False),
     s3: ClientCreatorContext = Depends(deps.get_s3),
 ) -> ModelPrediction:
-    topic_model = await deps.load_model(s3, model_id, version)
+    topic_model = await load_model(s3, model_id, version)
     topic_model.calculate_probabilities = calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
     if probabilities is not None:
@@ -82,7 +82,7 @@ async def reduce_topics(
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = await deps.load_model(s3, model_id, version)
+    topic_model = await load_model(s3, model_id, version)
     if len(topic_model.get_topics()) < num_topics:
         raise HTTPException(
             status_code=400, detail=f"num_topics must be less than {len(topic_model.get_topics())}"
