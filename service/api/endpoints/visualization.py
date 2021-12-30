@@ -63,7 +63,7 @@ async def topics(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, params["topics"], session)
+    await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_topics(**params).to_json()
 
@@ -76,7 +76,7 @@ async def barchart(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, params["topics"], session)
+    await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_barchart(**params).to_json()
 
@@ -89,7 +89,7 @@ async def hierarchy(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, params["topics"], session)
+    await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_hierarchy(**params).to_json()
 
@@ -102,7 +102,7 @@ async def heatmap(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, params["topics"], session)
+    await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_heatmap(**params).to_json()
 
@@ -127,6 +127,6 @@ async def term_rank(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, params["topics"], session)
+    await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_term_rank(**params).to_json()
