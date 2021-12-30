@@ -1,17 +1,11 @@
-from typing import List, Optional
+from typing import List
 
-import io
-import uuid
-
-import joblib
 import numpy as np
 from aiobotocore.session import ClientCreatorContext
-from bertopic import BERTopic
 from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
-from sklearn.datasets import fetch_20newsgroups
 from sqlalchemy import func
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import selectinload
@@ -19,6 +13,7 @@ from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service.api import deps
+from service.api.utils import get_sample_dataset, load_model, save_model, save_topics
 from service.core.config import settings
 from service.models import models
 from service.schemas.base import (
@@ -30,63 +25,7 @@ from service.schemas.base import (
 )
 from service.schemas.bertopic_wrapper import BERTopicWrapper
 
-router = APIRouter()
-
-
-def get_model_filename(model_id: UUID4, version: int = 1) -> str:
-    return f"{model_id}_{version}"
-
-
-async def load_model(s3: ClientCreatorContext, model_id: uuid.UUID, version: int = 1) -> BERTopic:
-    try:
-        model_name = get_model_filename(model_id, version)
-        response = await s3.get_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name)
-
-        with io.BytesIO() as f:  # double memory usage
-            async with response["Body"] as stream:
-                data = await stream.read()
-                f.write(data)
-                f.seek(0)
-            return joblib.load(f)
-
-    except s3.exceptions.NoSuchKey:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-
-async def save_model(
-    s3: ClientCreatorContext,
-    topic_model: BERTopic,
-    model_id: Optional[uuid.UUID] = None,
-    version: int = 1,
-) -> uuid.UUID:
-    if model_id is None:
-        model_id = uuid.uuid4()
-    model_name = get_model_filename(model_id, version)
-
-    with io.BytesIO() as f:
-        joblib.dump(topic_model, f)
-        f.seek(0)
-        await s3.put_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name, Body=f.read())
-    return model_id
-
-
-async def save_topics(
-    topic_model: BERTopic, session: AsyncSession, model: models.TopicModel
-) -> None:
-    topic_info = topic_model.get_topics()
-    for topic_index, top_words in topic_info.items():
-        topic = models.Topic(
-            name=topic_model.topic_names[topic_index],
-            count=topic_model.topic_sizes[topic_index],
-            topic_index=topic_index,
-            topic_model=model,
-            top_words=[models.Word(name=w[0], score=w[1]) for w in top_words],
-        )
-        session.add(topic)
-
-
-def get_sample_dataset():
-    return fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"][:100]
+router = APIRouter(tags=["model_training"])
 
 
 @router.post("/fit", summary="Run topic modeling", response_model=FitResult)
@@ -95,19 +34,11 @@ async def fit(
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = BERTopicWrapper(
-        language=data.language,
-        top_n_words=data.top_n_words,
-        nr_topics=data.nr_topics,
-        calculate_probabilities=data.calculate_probabilities,
-        seed_topic_list=data.seed_topic_list,
-        vectorizer_params=data.vectorizer_params,
-        umap_params=data.umap_params,
-        hdbscan_params=data.hdbscan_params,
-        verbose=data.verbose,
-    ).model
-    if data.texts:
-        topics, probs = topic_model.fit_transform(data.texts)
+    params = dict(data)
+    texts = params.pop("texts")
+    topic_model = BERTopicWrapper(**params).model
+    if texts:
+        topics, probs = topic_model.fit_transform(texts)
     else:
         docs = get_sample_dataset()
         topics, probs = topic_model.fit_transform(docs)

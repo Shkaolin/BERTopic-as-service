@@ -21,7 +21,7 @@ class Input(BaseModel):
     class Config:
         schema_extra = {
             "example": {
-                "language": "multilingual",
+                "language": "english",
                 "nr_topics": 3,
                 "vectorizer_params": {"stop_words": ["foo", "bar"], "ngram_range": (1, 2)},
                 "verbose": True,
@@ -49,3 +49,54 @@ class FitResult(ModelId):
 
 class DocsWithPredictions(Input, ModelPrediction):
     ...
+
+
+class VisTopicsInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    width: int = 650
+    height: int = 650
+
+
+class VisBarchartInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: int = 8
+    n_words: int = 5
+    width: int = 650
+    height: int = 650
+
+
+class VisHierarchyInput(BaseModel):
+    model: ModelId
+    orientation: str = "left"
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    width: int = 1000
+    height: int = 600
+
+
+class VisHeatmapInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    top_n_topics: Optional[int] = None
+    n_clusters: Optional[int] = None
+    width: int = 800
+    height: int = 800
+
+
+class VisDistributionInput(BaseModel):
+    model: ModelId
+    probabilities: List[float]
+    min_probability: float = 0.015
+    width: int = 800
+    height: int = 600
+
+
+class VisTermRankInput(BaseModel):
+    model: ModelId
+    topics: Optional[List[int]] = None
+    log_scale: bool = False
+    width: int = 800
+    height: int = 500
