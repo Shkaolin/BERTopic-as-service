@@ -8,9 +8,6 @@ from service.schemas.bertopic_wrapper import HDBSCANParams, UMAPParams, Vectoriz
 
 class Input(BaseModel):
     texts: List[str] = []
-
-
-class ModelParams(Input):
     language: str = "english"
     top_n_words: int = 10
     nr_topics: Optional[Union[int, str]] = None
@@ -67,8 +64,8 @@ class VisBarchartInput(BaseModel):
     topics: Optional[List[int]] = None
     top_n_topics: int = 8
     n_words: int = 5
-    width: int = 250
-    height: int = 250
+    width: int = 650
+    height: int = 650
 
 
 class VisHierarchyInput(BaseModel):

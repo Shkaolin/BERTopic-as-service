@@ -18,7 +18,7 @@ from service.models import models
 from service.schemas.base import (
     DocsWithPredictions,
     FitResult,
-    ModelParams,
+    Input,
     ModelPrediction,
     NotEmptyInput,
 )
@@ -44,7 +44,7 @@ async def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
 
 @router.post("/fit", summary="Run topic modeling", response_model=FitResult)
 async def fit(
-    data: ModelParams,
+    data: Input,
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
