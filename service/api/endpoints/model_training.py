@@ -1,9 +1,5 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Sequence
 
-import io
-import uuid
-
-import joblib
 import numpy as np
 from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
@@ -11,12 +7,12 @@ from fastapi import Depends, Query
 from fastapi.exceptions import HTTPException
 from fastapi.routing import APIRouter
 from pydantic.types import UUID4
-from sklearn.datasets import fetch_20newsgroups
 from sqlalchemy.exc import NoResultFound
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from service import crud
 from service.api import deps
+from service.api.utils import get_sample_dataset, save_model
 from service.core.config import settings
 from service.models import models
 from service.schemas.base import (
@@ -28,44 +24,7 @@ from service.schemas.base import (
 )
 from service.schemas.bertopic_wrapper import BERTopicWrapper
 
-router = APIRouter()
-
-
-def get_model_filename(model_id: UUID4, version: int = 1) -> str:
-    return f"{model_id}_{version}"
-
-
-async def load_model(s3: ClientCreatorContext, model_id: uuid.UUID, version: int = 1) -> BERTopic:
-    try:
-        model_name = get_model_filename(model_id, version)
-        response = await s3.get_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name)
-
-        with io.BytesIO() as f:  # double memory usage
-            async with response["Body"] as stream:
-                data = await stream.read()
-                f.write(data)
-                f.seek(0)
-            return joblib.load(f)
-
-    except s3.exceptions.NoSuchKey:
-        raise HTTPException(status_code=404, detail="Model not found")
-
-
-async def save_model(
-    s3: ClientCreatorContext,
-    topic_model: BERTopic,
-    model_id: Optional[uuid.UUID] = None,
-    version: int = 1,
-) -> uuid.UUID:
-    if model_id is None:
-        model_id = uuid.uuid4()
-    model_name = get_model_filename(model_id, version)
-
-    with io.BytesIO() as f:
-        joblib.dump(topic_model, f)
-        f.seek(0)
-        await s3.put_object(Bucket=settings.MINIO_BUCKET_NAME, Key=model_name, Body=f.read())
-    return model_id
+router = APIRouter(tags=["model_training"])
 
 
 async def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
@@ -83,29 +42,17 @@ async def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
     return topics
 
 
-def get_sample_dataset():
-    return fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"][:100]
-
-
 @router.post("/fit", summary="Run topic modeling", response_model=FitResult)
 async def fit(
     data: ModelParams,
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = BERTopicWrapper(
-        language=data.language,
-        top_n_words=data.top_n_words,
-        nr_topics=data.nr_topics,
-        calculate_probabilities=data.calculate_probabilities,
-        seed_topic_list=data.seed_topic_list,
-        vectorizer_params=data.vectorizer_params,
-        umap_params=data.umap_params,
-        hdbscan_params=data.hdbscan_params,
-        verbose=data.verbose,
-    ).model
-    if data.texts:
-        predicted_topics, probs = topic_model.fit_transform(data.texts)
+    params = dict(data)
+    texts = params.pop("texts")
+    topic_model = BERTopicWrapper(**params).model
+    if texts:
+        topics, probs = topic_model.fit_transform(texts)
     else:
         docs = get_sample_dataset()
         predicted_topics, probs = topic_model.fit_transform(docs)
@@ -129,7 +76,7 @@ async def predict(
     calculate_probabilities: bool = Query(default=False),
     s3: ClientCreatorContext = Depends(deps.get_s3),
 ) -> ModelPrediction:
-    topic_model = await load_model(s3, model_id, version)
+    topic_model = await deps.load_model(s3, model_id, version)
     topic_model.calculate_probabilities = calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
     if probabilities is not None:
@@ -150,7 +97,7 @@ async def reduce_topics(
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = await load_model(s3, model_id, version)
+    topic_model = await deps.load_model(s3, model_id, version)
     if len(topic_model.get_topics()) < num_topics:
         raise HTTPException(
             status_code=400, detail=f"num_topics must be less than {len(topic_model.get_topics())}"
