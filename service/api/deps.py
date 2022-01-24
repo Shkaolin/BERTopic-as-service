@@ -5,8 +5,8 @@ from aiobotocore.session import get_session
 from sqlmodel import Session
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from service.core.config import settings
-from service.db.db import engine, engine_async
+from ..core.config import settings
+from ..db.db import engine, engine_async
 
 
 async def get_s3() -> AsyncGenerator[AioBaseClient, None]:

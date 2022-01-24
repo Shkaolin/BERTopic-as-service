@@ -1,9 +1,6 @@
-import sys
-
 import pytest
 from fastapi.testclient import TestClient
 
-sys.path.append("..")
 from service.main import app
 
 

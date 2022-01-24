@@ -1,8 +1,8 @@
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import create_engine
 
-from service.core.config import settings
-from service.models import models  # NOQA
+from ..core.config import settings
+from ..models import models  # NOQA
 
 # connect_args = {"check_same_thread": False}
 db_url = (

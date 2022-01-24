@@ -1,9 +1,9 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from pydantic.types import UUID4
 
-from service.schemas.bertopic_wrapper import HDBSCANParams, UMAPParams, VectorizerParams
+from ..schemas.bertopic_wrapper import HDBSCANParams, UMAPParams, VectorizerParams
 
 
 class Input(BaseModel):
@@ -51,36 +51,39 @@ class DocsWithPredictions(Input, ModelPrediction):
     ...
 
 
-class VisTopicsInput(BaseModel):
+class BaseVisualization(BaseModel):
     model: ModelId
     topics: Optional[List[int]] = None
     top_n_topics: Optional[int] = None
     width: int = 650
     height: int = 650
 
+    @classmethod
+    @validator("top_n_topics", always=True)
+    def check_topics_and_top_n_topics(
+        cls, top_n_topics: Optional[List[int]], values: Dict[str, Optional[str]]
+    ) -> Optional[List[int]]:
+        topics = values.get("topics")
+        if not top_n_topics and not topics:
+            raise ValueError("Topics must be defined or top_n_topics grather then zero")
+        return top_n_topics
 
-class VisBarchartInput(BaseModel):
-    model: ModelId
-    topics: Optional[List[int]] = None
-    top_n_topics: int = 8
+
+class VisTopicsInput(BaseVisualization):
+    ...
+
+
+class VisBarchartInput(BaseVisualization):
     n_words: int = 5
-    width: int = 650
-    height: int = 650
 
 
-class VisHierarchyInput(BaseModel):
-    model: ModelId
+class VisHierarchyInput(BaseVisualization):
     orientation: str = "left"
-    topics: Optional[List[int]] = None
-    top_n_topics: Optional[int] = None
     width: int = 1000
     height: int = 600
 
 
-class VisHeatmapInput(BaseModel):
-    model: ModelId
-    topics: Optional[List[int]] = None
-    top_n_topics: Optional[int] = None
+class VisHeatmapInput(BaseVisualization):
     n_clusters: Optional[int] = None
     width: int = 800
     height: int = 800
@@ -96,7 +99,7 @@ class VisDistributionInput(BaseModel):
 
 class VisTermRankInput(BaseModel):
     model: ModelId
-    topics: Optional[List[int]] = None
+    topics: List[int]
     log_scale: bool = False
     width: int = 800
     height: int = 500
