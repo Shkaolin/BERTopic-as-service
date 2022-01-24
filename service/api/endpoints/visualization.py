@@ -8,10 +8,10 @@ from fastapi.routing import APIRouter
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from service.api import deps
-from service.api.utils import load_model
-from service.models import models
-from service.schemas.base import (
+from ...api import deps
+from ...api.utils import load_model
+from ...models import models
+from ...schemas.base import (
     ModelId,
     VisBarchartInput,
     VisDistributionInput,
@@ -63,7 +63,8 @@ async def topics(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, data.topics, session)
+    if data.topics:
+        await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_topics(**params).to_json()
 
@@ -76,7 +77,8 @@ async def barchart(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, data.topics, session)
+    if data.topics:
+        await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_barchart(**params).to_json()
 
@@ -89,7 +91,8 @@ async def hierarchy(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, data.topics, session)
+    if data.topics:
+        await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_hierarchy(**params).to_json()
 
@@ -102,7 +105,8 @@ async def heatmap(
 ) -> Any:
     params = dict(data)
     model = params.pop("model")
-    await check_topics(model, data.topics, session)
+    if data.topics:
+        await check_topics(model, data.topics, session)
     topic_model = await load_model(s3, model.model_id, model.version)
     return topic_model.visualize_heatmap(**params).to_json()
 

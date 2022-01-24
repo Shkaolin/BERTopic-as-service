@@ -21,10 +21,13 @@ class CRUDTopicModel(CRUDBase[TopicModel, TopicModelBase, TopicModelBase]):
 
     async def remove_by_id_version(
         self, db: AsyncSession, *, model_id: UUID, version: int
-    ) -> ModelType:
-        model = await self.get_by_id_version(db, model_id=model_id, version=version)
-        await db.delete(model)
-        await db.commit()
+    ) -> Optional[ModelType]:
+        model: Optional[ModelType] = await self.get_by_id_version(
+            db, model_id=model_id, version=version
+        )
+        if model is not None:
+            await db.delete(model)
+            await db.commit()
         return model
 
     async def get_max_version(self, db: AsyncSession, *, model_id: UUID) -> int:
