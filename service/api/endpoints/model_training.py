@@ -12,18 +12,12 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from service.api import deps
-from service.api.utils import get_sample_dataset, load_model, save_model, save_topics
-from service.core.config import settings
-from service.models import models
-from service.schemas.base import (
-    DocsWithPredictions,
-    FitResult,
-    Input,
-    ModelPrediction,
-    NotEmptyInput,
-)
-from service.schemas.bertopic_wrapper import BERTopicWrapper
+from ...api import deps
+from ...api.utils import get_sample_dataset, load_model, save_model, save_topics
+from ...core.config import settings
+from ...models import models
+from ...schemas.base import DocsWithPredictions, FitResult, Input, ModelPrediction, NotEmptyInput
+from ...schemas.bertopic_wrapper import BERTopicWrapper
 
 router = APIRouter(tags=["model_training"])
 
