@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from service.api.endpoints import model_training, visualization
+from .endpoints import model_training, visualization
 
 tags_metadata = [
     {

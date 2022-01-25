@@ -11,8 +11,8 @@ from pydantic.types import UUID4
 from sklearn.datasets import fetch_20newsgroups
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from service.core.config import settings
-from service.models import models
+from ..core.config import settings
+from ..models import models
 
 
 def get_sample_dataset():

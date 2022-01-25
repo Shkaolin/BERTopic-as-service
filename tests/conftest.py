@@ -1,10 +1,7 @@
-import sys
-
 import pytest
 from bertopic import BERTopic
 from fastapi.testclient import TestClient
 
-sys.path.append("..")
 from service.main import app
 
 

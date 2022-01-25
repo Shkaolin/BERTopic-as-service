@@ -16,7 +16,7 @@ keywords = ["Topic Modeling", "BERTopic", "FastAPI"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 bertopic = "0.9.4"
 fastapi = "*"
 gunicorn = "*"
