@@ -46,6 +46,10 @@ class WordBase(SQLModel):
     score: float = Field()
 
 
+class WordCreate(WordBase):
+    topic_id: int
+
+
 class Word(WordBase, table=True):
     id: Optional[int] = Field(primary_key=True, nullable=False)  # NOQA: A003
     topic_id: int = Field(foreign_key="topic.id")
@@ -62,6 +66,10 @@ class TopicBase(SQLModel):
 
 class TopicWithWords(TopicBase):
     top_words: List["WordBase"] = Field(default=[])
+
+
+class TopicCreate(TopicBase):
+    topic_model_id: int
 
 
 class Topic(TopicBase, table=True):
