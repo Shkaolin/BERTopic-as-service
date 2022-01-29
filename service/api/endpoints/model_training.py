@@ -68,7 +68,9 @@ async def fit(
     await crud.topic.save_topics(session, topics=topics, model=model)
 
     return FitResult(
-        model_id=model_id,
+        model=ModelId(
+            model_id=model_id,
+        ),
         predictions=ModelPrediction(topics=predicted_topics, probabilities=probs.tolist()),
     )
 
@@ -140,9 +142,7 @@ async def reduce_topics(
 async def list_models(
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> AbstractPage[models.TopicModel]:
-
-    models = await crud.topic_model.paginate(session)
-    return models
+    return await crud.topic_model.paginate(session)
 
 
 @router.get("/models/{model_id}/", summary="Get topics", response_model=List[models.TopicBase])

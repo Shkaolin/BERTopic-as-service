@@ -1,10 +1,11 @@
 from typing import List, Optional
 
+import datetime
 from functools import wraps
 from uuid import UUID
 
 from sqlalchemy.sql.schema import UniqueConstraint
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship, SQLModel, func
 
 
 # monkeypath from https://github.com/tiangolo/sqlmodel/issues/9
@@ -29,6 +30,9 @@ Field = set_default_index(Field)
 class TopicModelBase(SQLModel):
     model_id: UUID = Field()
     version: int = Field(default=1)
+    created_at: datetime.datetime = Field(
+        sa_column_kwargs={"server_default": func.now()}, default=None
+    )
 
 
 class TopicModel(TopicModelBase, table=True):

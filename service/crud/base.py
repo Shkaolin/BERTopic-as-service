@@ -5,7 +5,7 @@ from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import AbstractPage, AbstractParams
 from sqlmodel import SQLModel, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlmodel.sql.expression import SelectOfScalar
+from sqlmodel.sql.expression import Select, SelectOfScalar
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=SQLModel)
@@ -36,20 +36,24 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def paginate(
         self,
         db: AsyncSession,
+        query: Optional[Union[Select[ModelType], SelectOfScalar[ModelType]]] = None,
         params: Optional[AbstractParams] = None,
     ) -> AbstractPage[ModelType]:
         params = resolve_params(params)
         raw_params = params.to_raw_params()
 
+        if query is None:
+            query = select(self.model)
+
+        if not isinstance(query, (Select, SelectOfScalar)):
+            query = select(query)
+
         total: int = (
-            await db.execute(select([func.count()]).select_from(self.model))
+            await db.execute(select([func.count()]).select_from(query.subquery()))
         ).scalar() or 0
-        items_statement = select(self.model).limit(raw_params.limit).offset(raw_params.offset)
+        items_statement = query.limit(raw_params.limit).offset(raw_params.offset)
         items: List[ModelType] = (await db.execute(items_statement)).scalars().all()
         return create_page(items, total, params)
-
-    def select_all(self) -> SelectOfScalar[ModelType]:
-        return select(self.model)
 
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         # TODO: review this
