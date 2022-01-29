@@ -22,7 +22,7 @@ from ...schemas.base import (
 )
 
 router = APIRouter(
-    prefix="/visualization",
+    prefix="/visualizations",
     tags=["visualization"],
     responses={404: {"description": "Not found"}},
 )

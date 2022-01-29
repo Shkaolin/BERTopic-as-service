@@ -1,8 +1,11 @@
-from typing import Any, Dict, Generic, Optional, Sequence, Type, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, Union
 
 from fastapi.encoders import jsonable_encoder
-from sqlmodel import SQLModel, select
+from fastapi_pagination.api import create_page, resolve_params
+from fastapi_pagination.bases import AbstractPage, AbstractParams
+from sqlmodel import SQLModel, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel.sql.expression import SelectOfScalar
 
 ModelType = TypeVar("ModelType", bound=SQLModel)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=SQLModel)
@@ -29,6 +32,24 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     ) -> Sequence[ModelType]:
         statement = select(self.model).offset(skip).limit(limit)
         return (await db.exec(statement)).all()  # type: ignore
+
+    async def paginate(
+        self,
+        db: AsyncSession,
+        params: Optional[AbstractParams] = None,
+    ) -> AbstractPage[ModelType]:
+        params = resolve_params(params)
+        raw_params = params.to_raw_params()
+
+        total: int = (
+            await db.execute(select([func.count()]).select_from(self.model))
+        ).scalar() or 0
+        items_statement = select(self.model).limit(raw_params.limit).offset(raw_params.offset)
+        items: List[ModelType] = (await db.execute(items_statement)).scalars().all()
+        return create_page(items, total, params)
+
+    def select_all(self) -> SelectOfScalar[ModelType]:
+        return select(self.model)
 
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         # TODO: review this

@@ -28,6 +28,7 @@ sqlmodel = "^0.0.4"
 psycopg2-binary = "^2.9.1"
 asyncpg = "^0.24.0"
 alembic = "^1.7.5"
+fastapi-pagination = {extras = ["sqlmodel"], version = "^0.9.1"}
 
 [tool.poetry.dev-dependencies]
 black = "*"

@@ -1,11 +1,14 @@
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence, Union
 
 import numpy as np
 from aiobotocore.session import ClientCreatorContext
 from bertopic import BERTopic
-from fastapi import Depends, Query
+from fastapi import Depends, Path
 from fastapi.exceptions import HTTPException
+from fastapi.responses import JSONResponse
 from fastapi.routing import APIRouter
+from fastapi_pagination import LimitOffsetPage
+from fastapi_pagination.bases import AbstractPage
 from pydantic.types import UUID4
 from sqlalchemy.exc import NoResultFound
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -15,7 +18,15 @@ from ...api import deps
 from ...api.utils import get_sample_dataset, load_model, save_model
 from ...core.config import settings
 from ...models import models
-from ...schemas.base import DocsWithPredictions, FitResult, Input, ModelPrediction, NotEmptyInput
+from ...schemas.base import (
+    DocsWithPredictions,
+    FitResult,
+    Input,
+    Message,
+    ModelId,
+    ModelPrediction,
+    PredictIn,
+)
 from ...schemas.bertopic_wrapper import BERTopicWrapper
 
 router = APIRouter(tags=["model_training"])
@@ -36,7 +47,7 @@ async def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
     return topics
 
 
-@router.post("/fit", summary="Run topic modeling", response_model=FitResult)
+@router.post("/models", summary="Run topic modeling", response_model=FitResult)
 async def fit(
     data: Input,
     s3: ClientCreatorContext = Depends(deps.get_s3),
@@ -62,16 +73,17 @@ async def fit(
     )
 
 
-@router.post("/predict", summary="Predict with existing model", response_model=ModelPrediction)
+@router.post(
+    "/models/{model_id}/predict",
+    summary="Predict with existing model",
+    response_model=ModelPrediction,
+)
 async def predict(
-    data: NotEmptyInput,
-    model_id: UUID4 = Query(...),
-    version: int = 1,
-    calculate_probabilities: bool = Query(default=False),
+    data: PredictIn,
     s3: ClientCreatorContext = Depends(deps.get_s3),
 ) -> ModelPrediction:
-    topic_model = await load_model(s3, model_id, version)
-    topic_model.calculate_probabilities = calculate_probabilities
+    topic_model = await load_model(s3, data.model.model_id, data.model.version)
+    topic_model.calculate_probabilities = data.calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
     if probabilities is not None:
         probabilities = probabilities.tolist()
@@ -79,20 +91,17 @@ async def predict(
 
 
 @router.post(
-    "/reduce_topics",
+    "/models/{model_id}/reduce-topics",
     summary="Reduce number of topics in existing model",
     response_model=FitResult,
 )
 async def reduce_topics(
     data: DocsWithPredictions,
-    model_id: UUID4 = Query(...),
-    version: int = Query(default=1),
-    num_topics: int = Query(...),
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> FitResult:
-    topic_model = await load_model(s3, model_id, version)
-    if len(topic_model.get_topics()) < num_topics:
+    topic_model = await load_model(s3, data.model.model_id, data.model.version)
+    if len(topic_model.get_topics()) < data.num_topics:
         raise HTTPException(
             status_code=400, detail=f"num_topics must be less than {len(topic_model.get_topics())}"
         )
@@ -103,11 +112,13 @@ async def reduce_topics(
         docs=data.texts,
         topics=data.topics,
         probabilities=np.array(data.probabilities),
-        nr_topics=num_topics,
+        nr_topics=data.num_topics,
     )
-    current_max_version = await crud.topic_model.get_max_version(session, model_id=model_id)
+    current_max_version = await crud.topic_model.get_max_version(
+        session, model_id=data.model.model_id
+    )
 
-    model_id = await save_model(s3, topic_model, model_id, current_max_version + 1)
+    model_id = await save_model(s3, topic_model, data.model.model_id, current_max_version + 1)
     topics = await gather_topics(topic_model)
     model = await crud.topic_model.create(
         session, obj_in=models.TopicModelBase(model_id=model_id, version=current_max_version + 1)
@@ -115,41 +126,28 @@ async def reduce_topics(
     await crud.topic.save_topics(session, topics=topics, model=model)
 
     return FitResult(
-        model_id=model_id,
-        version=current_max_version + 1,
+        model=ModelId(
+            model_id=model_id,
+            version=current_max_version + 1,
+        ),
         predictions=ModelPrediction(topics=predicted_topics, probabilities=probs.tolist()),
     )
 
 
 @router.get(
-    "/models", summary="Get all existing model ids", response_model=List[models.TopicModelBase]
+    "/models", summary="Get existing models", response_model=LimitOffsetPage[models.TopicModelBase]
 )
 async def list_models(
-    skip: int = Query(default=0),
-    limit: int = Query(default=100),
     session: AsyncSession = Depends(deps.get_db_async),
-) -> Sequence[models.TopicModel]:
-    result: Sequence[models.TopicModel] = await crud.topic_model.get_multi(
-        session, skip=skip, limit=limit
-    )
-    return result
+) -> AbstractPage[models.TopicModel]:
+
+    models = await crud.topic_model.paginate(session)
+    return models
 
 
-@router.get("/topics", summary="Get topics", response_model=List[models.TopicWithWords])
+@router.get("/models/{model_id}/", summary="Get topics", response_model=List[models.TopicBase])
 async def get_topics(
-    model_id: UUID4 = Query(...),
-    version: int = 1,
-    session: AsyncSession = Depends(deps.get_db_async),
-) -> Sequence[models.TopicWithWords]:
-    result: Sequence[models.TopicWithWords] = await crud.topic.get_model_topics(
-        session, model_id=model_id, version=version, with_words=True
-    )
-    return result
-
-
-@router.get("/topics_info", summary="Get topics info", response_model=List[models.TopicBase])
-async def get_topics_info(
-    model_id: UUID4 = Query(...),
+    model_id: UUID4 = Path(...),
     version: int = 1,
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> Sequence[models.Topic]:
@@ -159,16 +157,37 @@ async def get_topics_info(
     return result
 
 
-@router.get("/remove_model", summary="Remove topic model")
+@router.get(
+    "/models/{model_id}/topics",
+    summary="Get topics with words",
+    response_model=List[models.TopicWithWords],
+)
+async def get_topics_info(
+    model_id: UUID4 = Path(...),
+    version: int = 1,
+    session: AsyncSession = Depends(deps.get_db_async),
+) -> Sequence[models.TopicWithWords]:
+    result: Sequence[models.TopicWithWords] = await crud.topic.get_model_topics(
+        session, model_id=model_id, version=version, with_words=True
+    )
+    return result
+
+
+@router.delete(
+    "/models/{model_id}",
+    summary="Remove topic model",
+    responses={404: {"model": Message}},
+    response_model=Message,
+)
 async def remove_model(
-    model_id: UUID4 = Query(...),
+    model_id: UUID4 = Path(...),
     version: int = 1,
     s3: ClientCreatorContext = Depends(deps.get_s3),
     session: AsyncSession = Depends(deps.get_db_async),
-) -> str:
+) -> Union[Message, JSONResponse]:
     try:
         await crud.topic_model.remove_by_id_version(session, model_id=model_id, version=version)
         await s3.delete_object(Bucket=settings.MINIO_BUCKET_NAME, Key=str(model_id))
     except (NoResultFound, s3.exceptions.NoSuchKey):
-        raise HTTPException(status_code=404, detail="Model not found")
-    return "ok"
+        return JSONResponse(status_code=404, content=dict(Message(message="Model not found")))
+    return Message(message="ok")
