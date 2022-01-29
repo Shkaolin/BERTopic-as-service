@@ -121,6 +121,7 @@ async def reduce_topics(
     )
 
     model_id = await save_model(s3, topic_model, data.model.model_id, current_max_version + 1)
+
     topics = await gather_topics(topic_model)
     model = await crud.topic_model.create(
         session, obj_in=models.TopicModelBase(model_id=model_id, version=current_max_version + 1)
@@ -140,6 +141,8 @@ async def reduce_topics(
     "/models", summary="Get existing models", response_model=LimitOffsetPage[models.TopicModelBase]
 )
 async def list_models(
+    skip: int = Query(default=0),
+    limit: int = Query(default=100),
     session: AsyncSession = Depends(deps.get_db_async),
 ) -> AbstractPage[models.TopicModel]:
     return await crud.topic_model.paginate(session)
