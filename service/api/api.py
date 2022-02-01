@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from .endpoints import base, model_training, visualization
+from .endpoints import base, modeling, models, visualization
 
 tags_metadata = [
     {
@@ -8,8 +8,12 @@ tags_metadata = [
         "description": "Service routes, not connected with BERTopic",
     },
     {
-        "name": "model_training",
-        "description": "Model training/observing",
+        "name": "modeling",
+        "description": "Model training/predicting",
+    },
+    {
+        "name": "models",
+        "description": "Information about trained models",
     },
     {
         "name": "visualization",
@@ -19,5 +23,6 @@ tags_metadata = [
 
 api_router = APIRouter()
 api_router.include_router(base.router)
-api_router.include_router(model_training.router)
+api_router.include_router(models.router)
+api_router.include_router(modeling.router)
 api_router.include_router(visualization.router)
