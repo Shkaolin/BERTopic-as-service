@@ -17,7 +17,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-bertopic = "0.9.3"
+bertopic = "0.10.0"
+transformers = "4.15.0"
+huggingface-hub = "0.4.0"
+sentence-transformers = "2.1.0"
 fastapi = "*"
 gunicorn = "*"
 uvicorn = "*"
