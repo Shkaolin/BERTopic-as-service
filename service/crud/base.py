@@ -46,7 +46,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             query = select(self.model)
 
         if not isinstance(query, (Select, SelectOfScalar)):
-            query = select(query)
+            query = select(query)  # type: ignore
 
         total: int = (
             await db.execute(select([func.count()]).select_from(query.subquery()))
@@ -89,7 +89,7 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
     async def remove(self, db: AsyncSession, *, id: int) -> Optional[ModelType]:  # NOQA
         obj = await db.get(self.model, id)
         if obj is not None:
-            db.delete(obj)
-            db.commit()
+            db.delete(obj)  # type: ignore
+            db.commit()  # type: ignore
             return obj
         return None
