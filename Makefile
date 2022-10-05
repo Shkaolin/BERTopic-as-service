@@ -17,7 +17,7 @@ help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
 flake: ## Check formatting with flake8
-	poetry run flakehell lint ${APP_PATH}
+	poetry run flakeheaven lint ${APP_PATH}
 
 black: ## Format code with black
 	poetry run black ${APP_PATH}

@@ -6,9 +6,7 @@ services:
     image: bertopic-as-service:latest
     build: .
     command: >
-      bash -c "
-      while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done;
-      uvicorn service.main:app --host 0.0.0.0"
+      bash -c " while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done; uvicorn service.main:app --host 0.0.0.0"
     ports:
       - 8008:8000
     environment:
@@ -33,9 +31,7 @@ services:
     hostname: minio
     image: quay.io/minio/minio:latest
     entrypoint: >
-      /bin/sh -c "
-      mkdir -p /data/${MINIO_BUCKET_NAME};
-      /opt/bin/minio server --console-address ':9001' /data"
+      /bin/sh -c " mkdir -p /data/${MINIO_BUCKET_NAME}; /opt/bin/minio server --console-address ':9001' /data"
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -49,7 +45,13 @@ services:
     volumes:
       - data:/data:rw
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:9000/minio/health/live"
+        ]
       interval: 30s
       timeout: 20s
       retries: 3
@@ -63,13 +65,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
     entrypoint: >
-      /bin/sh -c "
-      while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done;
-      sleep 5;
-      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
-      /usr/bin/mc admin user add myminio ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
-      /usr/bin/mc admin policy set myminio readwrite user=${MINIO_ACCESS_KEY};
-      exit 0;"
+      /bin/sh -c " while !</dev/tcp/minio/9000; do echo 'Wait minio to startup...' && sleep 1; done; sleep 5; /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}; /usr/bin/mc admin user add myminio ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY}; /usr/bin/mc admin policy set myminio readwrite user=${MINIO_ACCESS_KEY}; exit 0;"
     depends_on:
       - minio
 
@@ -78,14 +74,13 @@ services:
     image: postgres
     restart: always
     ports:
-     - 5432:5432
+      - 5432:5432
     environment:
       POSTGRES_DB: bertopic
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-     - pg_data:/var/lib/postgresql/data
-    
+      - pg_data:/var/lib/postgresql/data
 
 volumes:
   data:
