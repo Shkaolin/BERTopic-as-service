@@ -29,13 +29,15 @@ class Input(BaseModel):
         }
 
 
-class NotEmptyInput(BaseModel):
-    texts: List[str] = Field(min_length=1)
-
-
 class ModelId(BaseModel):
     model_id: UUID4
     version: int = 1
+
+
+class PredictIn(BaseModel):
+    model: ModelId
+    texts: List[str] = Field(min_length=1)
+    calculate_probabilities: bool = False
 
 
 class ModelPrediction(BaseModel):
@@ -43,12 +45,19 @@ class ModelPrediction(BaseModel):
     probabilities: Optional[List[List[float]]]
 
 
-class FitResult(ModelId):
+class FitResult(BaseModel):
+    model: ModelId
     predictions: ModelPrediction
 
 
-class DocsWithPredictions(Input, ModelPrediction):
-    ...
+class DocsWithPredictions(ModelPrediction):
+    model: ModelId
+    texts: List[str] = Field(min_length=1)
+    num_topics: int
+
+
+class Message(BaseModel):
+    message: str
 
 
 class BaseVisualization(BaseModel):

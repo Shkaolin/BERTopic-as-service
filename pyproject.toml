@@ -17,21 +17,21 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
-bertopic = "0.9.3"
+bertopic = "*"
+joblib= "<=1.1.0"
 fastapi = "*"
 gunicorn = "*"
 uvicorn = "*"
-importlib-metadata = "^4.8.0"
-aiobotocore = "^1.4.2"
-pydantic = {extras = ["dotenv"], version = "^1.8.2"}
-sqlmodel = "^0.0.4"
+aiobotocore = ">=1.4.2"
+pydantic = {extras = ["dotenv"], version = ">=1.8.2"}
+sqlmodel = ">=0.0.4"
 psycopg2-binary = "^2.9.1"
-asyncpg = "^0.24.0"
-alembic = "^1.7.5"
+asyncpg = ">=0.24.0"
+alembic = ">=1.7.5"
+fastapi-pagination = {extras = ["sqlmodel"], version = ">=0.9.1"}
 
 [tool.poetry.dev-dependencies]
 black = "*"
-flake8 = "3.9.2"
 isort = "*"
 mypy = "*"
 pre-commit = "*"
@@ -40,7 +40,7 @@ pytest-cov = "*"
 pep8-naming = "*"
 flake8-bugbear = "*"
 flake8-builtins = "*"
-flakehell = "^0.9.0"
+flakeheaven = "<3"
 
 [tool.black]
 target-version = ["py38"]
@@ -83,7 +83,7 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
-[tool.flakehell]
+[tool.flakeheaven]
 exclude = ["*.md"]
 format = "grouped"
 max_line_length = 99
@@ -91,7 +91,7 @@ max_complexity = 18
 show_source = true
 extended_default_ignore = []
 
-[tool.flakehell.plugins]
+[tool.flakeheaven.plugins]
 pylint = ["+*", "-E203", "-E266", "-E501", "-W503"]
 pyflakes = ["+*"]
 "flake8-*" = ["+*", "-B008"]

@@ -16,7 +16,9 @@ from ..models import models
 
 
 def get_sample_dataset():
-    return fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"][:100]
+    dataset = fetch_20newsgroups(subset="all", remove=("headers", "footers", "quotes"))["data"]
+    dataset = [doc for doc in dataset if len(doc) > 0]
+    return dataset[:100]
 
 
 def get_model_filename(model_id: UUID4, version: int = 1) -> str:
