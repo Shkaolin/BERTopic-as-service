@@ -25,14 +25,14 @@ from ..utils import get_sample_dataset, load_model, save_model
 router = APIRouter(prefix="/modeling", tags=["modeling"])
 
 
-async def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
+def gather_topics(topic_model: BERTopic) -> List[Dict[str, Any]]:
     topic_info = topic_model.get_topics()
     topics = []
     for topic_index, top_words in topic_info.items():
         topics.append(
             {
-                "name": topic_model.topic_names[topic_index],
-                "count": topic_model.topic_sizes[topic_index],
+                "name": topic_model.topic_labels_[topic_index],
+                "count": topic_model.topic_sizes_[topic_index],
                 "topic_index": topic_index,
                 "top_words": [{"name": w[0], "score": w[1]} for w in top_words],
             }
@@ -56,8 +56,8 @@ async def fit(
         predicted_topics, probs = topic_model.fit_transform(docs)
 
     model_id = await save_model(s3, topic_model)
-    topics = await gather_topics(topic_model)
     model = await crud.topic_model.create(session, obj_in=models.TopicModelBase(model_id=model_id))
+    topics = gather_topics(topic_model)
     await crud.topic.save_topics(session, topics=topics, model=model)
 
     return FitResult(
@@ -80,8 +80,11 @@ async def predict(
     topic_model = await load_model(s3, data.model.model_id, data.model.version)
     topic_model.calculate_probabilities = data.calculate_probabilities
     topics, probabilities = topic_model.transform(data.texts)
-    if probabilities is not None:
+    print(probabilities)
+    if data.calculate_probabilities:
         probabilities = probabilities.tolist()
+    else:
+        probabilities = None
     return ModelPrediction(topics=topics, probabilities=probabilities)
 
 
@@ -115,10 +118,10 @@ async def reduce_topics(
 
     model_id = await save_model(s3, topic_model, data.model.model_id, current_max_version + 1)
 
-    topics = await gather_topics(topic_model)
     model = await crud.topic_model.create(
         session, obj_in=models.TopicModelBase(model_id=model_id, version=current_max_version + 1)
     )
+    topics = gather_topics(topic_model)
     await crud.topic.save_topics(session, topics=topics, model=model)
 
     return FitResult(

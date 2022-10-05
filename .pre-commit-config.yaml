@@ -19,7 +19,7 @@ repos:
         name: flake8
         stages: [commit]
         language: system
-        entry: poetry run flakehell lint
+        entry: poetry run flakeheaven lint
         types: [python]
 
       - id: mypy

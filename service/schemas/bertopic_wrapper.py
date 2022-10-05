@@ -77,7 +77,7 @@ class HDBSCANParams(BaseModel):
     match_reference_implementation: Optional[bool] = False
 
 
-class BERTopicWrapper(object):
+class BERTopicWrapper:
     def __init__(
         self,
         language: str = "english",
