@@ -15,11 +15,11 @@ pytestmark = pytest.mark.unit
 
 
 class TestBERTopicWrapper:
-    def test_init(self):
+    def test_init(self) -> None:
         wrapper = BERTopicWrapper()
         assert type(wrapper.model) == BERTopic
 
-    def test_init_vectorizer(self):
+    def test_init_vectorizer(self) -> None:
         vectorizer_params = {
             "lowercase": False,
             "stop_words": ["foo"],
@@ -32,7 +32,7 @@ class TestBERTopicWrapper:
         for param, value in vectorizer_params.items():
             assert getattr(wrapper.vectorizer_model, param) == value
 
-    def test_init_umap(self):
+    def test_init_umap(self) -> None:
         umap_params = {
             "n_neighbors": 50,
             "n_components": 5,
@@ -45,7 +45,7 @@ class TestBERTopicWrapper:
         for param, value in umap_params.items():
             assert getattr(wrapper.umap_model, param) == value
 
-    def test_init_hdbscan(self):
+    def test_init_hdbscan(self) -> None:
         hdbscan_params = {
             "min_cluster_size": 7,
             "min_samples": 100,
