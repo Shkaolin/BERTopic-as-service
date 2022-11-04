@@ -37,10 +37,10 @@ repos:
         types: [python]
         pass_filenames: false
 
-      # - id: pytest-cov
-      #   name: pytest
-      #   stages: [push]
-      #   language: system
-      #   entry: poetry run pytest --cov ruts --cov-fail-under 80
-      #   types: [python]
-      #   pass_filenames: false
+      - id: pytest-cov
+        name: pytest
+        stages: [push]
+        language: system
+        entry: poetry run pytest --cov service --cov-fail-under 80
+        types: [python]
+        pass_filenames: false

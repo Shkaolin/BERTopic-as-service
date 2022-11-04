@@ -1,9 +1,10 @@
 import pytest
+from fastapi.testclient import TestClient
 
 pytestmark = pytest.mark.slow
 
 
-def test_fit(client):
+def test_fit(client: TestClient) -> None:
     response = client.post("/modeling/training", json={"texts": []})
     assert response.status_code == 200
 
