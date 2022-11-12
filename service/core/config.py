@@ -5,7 +5,8 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     SERVER_NAME: str = "bertopic_as_service"
 
-    MINIO_URL: str
+    MINIO_HOST: str
+    MINIO_PORT: int
     MINIO_REGION_NAME: str
     MINIO_BUCKET_NAME: str
     MINIO_ACCESS_KEY: str

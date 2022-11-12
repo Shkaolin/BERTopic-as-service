@@ -14,7 +14,7 @@ async def get_s3() -> AsyncGenerator[AioBaseClient, None]:
     async with session.create_client(
         "s3",
         region_name=settings.MINIO_REGION_NAME,
-        endpoint_url=settings.MINIO_URL,
+        endpoint_url=f"http://{settings.MINIO_HOST}:{settings.MINIO_PORT}",
         use_ssl=False,
         aws_secret_access_key=settings.MINIO_SECRET_KEY,
         aws_access_key_id=settings.MINIO_ACCESS_KEY,

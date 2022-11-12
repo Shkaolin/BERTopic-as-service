@@ -1,0 +1,7 @@
+.vscode/
+data/
+k8s/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+.github/

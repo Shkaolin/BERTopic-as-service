@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: create-minio-secret-key
+  namespace: bertopic
+spec:
+  ttlSecondsAfterFinished: 100
+  template:
+    spec:
+      containers:
+        - name: mc-container
+          image: quay.io/minio/mc
+          imagePullPolicy: Never
+          command: ["/bin/bash", "-c"]
+          args:
+            - /usr/bin/mc alias set myminio http://${MINIO_HOST}:${MINIO_PORT} ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD};
+              /usr/bin/mc admin user add myminio ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY};
+              /usr/bin/mc admin policy set myminio readwrite user=${MINIO_ACCESS_KEY};
+              exit 0;
+          envFrom:
+            - secretRef:
+                name: create-minio-secret-key-secret
+
+      initContainers:
+        - name: init-mc-container
+          image: quay.io/minio/mc
+          command: ["/bin/bash", "-c"]
+          args:
+            - while !</dev/tcp/${MINIO_HOST}/${MINIO_PORT};
+              do echo 'Wait minio to startup...' && sleep 1;
+              done;
+              sleep 5;
+
+          envFrom:
+            - secretRef:
+                name: create-minio-secret-key-secret
+
+      restartPolicy: OnFailure
+  backoffLimit: 15

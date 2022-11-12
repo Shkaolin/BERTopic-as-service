@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: minio-deployment
+  namespace: bertopic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: minio-container
+  template:
+    metadata:
+      labels:
+        app: minio-container
+        tier: backend
+    spec:
+      containers:
+        - name: minio-container
+          image: quay.io/minio/minio:latest
+          command: ["/bin/sh"]
+          args:
+            [
+              "-c",
+              " mkdir -p /data/${MINIO_BUCKET_NAME}; /opt/bin/minio server --console-address ':9001' /data",
+            ]
+          envFrom:
+            - secretRef:
+                name: minio-secret
+          ports:
+            - containerPort: 9000
+            - containerPort: 9001
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "0.5"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+          volumeMounts:
+            - name: minio-volume-mount
+              mountPath: /data
+          livenessProbe:
+            httpGet:
+              path: /minio/health/live
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+
+          readinessProbe:
+            httpGet:
+              path: /minio/health/ready
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+
+      volumes:
+        - name: minio-volume-mount
+          persistentVolumeClaim:
+            claimName: minio-pvc
