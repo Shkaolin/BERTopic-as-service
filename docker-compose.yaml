@@ -10,7 +10,7 @@ services:
     ports:
       - 8008:8000
     environment:
-      MINIO_HOST: localhost
+      MINIO_HOST: minio
       MINIO_PORT: 9000
       MINIO_REGION_NAME: berttopic
       MINIO_BUCKET_NAME: default_bucket
