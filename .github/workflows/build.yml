@@ -3,13 +3,14 @@ name: build
 on:
   pull_request:
     branches:
-    - "**"
+      - "**"
   push:
     branches:
-    - main
+      - main
 
 env:
-  MINIO_URL: http://minio:9000
+  MINIO_HOST: minio
+  MINIO_PORT: 9000
   MINIO_ROOT_USER: ${{ secrets.MINIO_ROOT_USER }}
   MINIO_ROOT_PASSWORD: ${{ secrets.MINIO_ROOT_PASSWORD }}
   MINIO_REGION_NAME: berttopic
@@ -70,5 +71,5 @@ jobs:
             🎉 master brach is updated, congratulations!
 
             *Repository*: ${{ github.repository }}
-            
+
             *See changes*: https://github.com/${{ github.repository }}/commit/${{github.sha}}

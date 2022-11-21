@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-deployment
+  namespace: bertopic
+  labels:
+    app: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-app
+  template:
+    metadata:
+      labels:
+        app: backend-app
+    spec:
+      containers:
+        - image: bertopic-as-service:latest
+          imagePullPolicy: Never
+          name: backend-container
+          envFrom:
+            - secretRef:
+                name: backend-secret
+          ports:
+            - containerPort: 8000
+              name: fastapi
+          readinessProbe:
+            httpGet:
+              port: 8000
+              path: /docs
+            initialDelaySeconds: 15
+          livenessProbe:
+            httpGet:
+              port: 8000
+              path: /docs
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "0.5"
+            limits:
+              memory: "1Gi"
+              cpu: "1"
+
+      initContainers:
+        - name: init-postgres-service
+          image: postgres:15.0
+          command: ["/bin/sh", "-c"]
+          args:
+            - until pg_isready -h ${POSTGRES_HOST} -p ${POSTGRES_PORT};
+              do echo waiting for database;
+              sleep 1;
+              done;
+          envFrom:
+            - secretRef:
+                name: backend-secret
+
+        - name: init-minio-service
+          image: quay.io/minio/mc
+          command: ["/bin/sh", "-c"]
+          args:
+            - while !</dev/tcp/${MINIO_HOST}/${MINIO_PORT};
+              do echo 'Wait minio to startup...' && sleep 1;
+              done;
+          envFrom:
+            - secretRef:
+                name: backend-secret

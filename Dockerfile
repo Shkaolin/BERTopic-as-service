@@ -22,3 +22,7 @@ RUN poetry config virtualenvs.create false \
   && poetry debug
 
 RUN poetry install --no-interaction
+
+COPY . ./
+
+CMD [ "uvicorn", "service.main:app", "--host", "0.0.0.0" ]

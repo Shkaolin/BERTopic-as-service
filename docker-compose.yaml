@@ -10,7 +10,8 @@ services:
     ports:
       - 8008:8000
     environment:
-      MINIO_URL: http://minio:9000
+      MINIO_HOST: minio
+      MINIO_PORT: 9000
       MINIO_REGION_NAME: berttopic
       MINIO_BUCKET_NAME: default_bucket
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
@@ -20,8 +21,6 @@ services:
       POSTGRES_DB: bertopic
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - .:/app
     depends_on:
       - minio
       - db
