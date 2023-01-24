@@ -1,4 +1,9 @@
 repos:
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: "v0.0.233"
+    hooks:
+      - id: ruff
+
   - repo: local
     hooks:
       - id: black
@@ -13,13 +18,6 @@ repos:
         stages: [commit]
         language: system
         entry: poetry run isort --settings-path pyproject.toml
-        types: [python]
-
-      - id: flake8
-        name: flake8
-        stages: [commit]
-        language: system
-        entry: poetry run flakeheaven lint
         types: [python]
 
       - id: mypy

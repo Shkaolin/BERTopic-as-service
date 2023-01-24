@@ -17,6 +17,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+setuptools = "*" # for umap library
 bertopic = "*"
 joblib= "<=1.1.0"
 fastapi = "*"
@@ -37,11 +38,8 @@ mypy = "*"
 pre-commit = "*"
 pytest = "*"
 pytest-cov = "*"
-pep8-naming = "*"
-flake8-bugbear = "*"
-flake8-builtins = "*"
-flakeheaven = "<3"
 pytest-mock = "^3.6.1"
+ruff = "*"
 
 [tool.black]
 target-version = ["py38"]
@@ -84,20 +82,14 @@ warn_unreachable = true
 warn_unused_configs = true
 warn_unused_ignores = true
 
-[tool.flakeheaven]
-exclude = ["*.md"]
+[tool.ruff]
+target-version = "py38"
+line-length = 99
+select = ["E", "B", "F", "C", "W", "N", "Q", "UP"]
+ignore = ["E501", "F401", "B904", "B008"]
 format = "grouped"
-max_line_length = 99
-max_complexity = 18
-show_source = true
-extended_default_ignore = []
-
-[tool.flakeheaven.plugins]
-pylint = ["+*", "-E203", "-E266", "-E501", "-W503"]
-pyflakes = ["+*"]
-"flake8-*" = ["+*", "-B008"]
-mccabe = ["+*"]
-pep8-naming = ["+*"]
+exclude = ["*.md"]
+show-source = true
 
 [tool.pytest.ini_options]
 addopts = "-vv -x --lf"

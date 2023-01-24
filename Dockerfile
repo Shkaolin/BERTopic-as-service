@@ -12,14 +12,13 @@ WORKDIR /app
 
 RUN apt-get update \
   && apt-get -y install gcc make curl \
-  && pip install poetry==1.1.11
+  && pip install poetry==1.3.2
 
 COPY pyproject.toml poetry.lock ./
 
 RUN poetry config virtualenvs.create false \
   && poetry export --without-hashes -f requirements.txt --dev \
-  |  poetry run pip install -r /dev/stdin \
-  && poetry debug
+  |  poetry run pip install -r /dev/stdin
 
 RUN poetry install --no-interaction
 
