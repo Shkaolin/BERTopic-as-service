@@ -16,7 +16,7 @@ export PRINT_HELP_PYSCRIPT
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-ruff: ## Check formatting with flake8
+ruff: ## Check formatting with ruff
 	poetry run ruff ${APP_PATH}
 
 black: ## Format code with black
