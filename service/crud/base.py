@@ -3,6 +3,7 @@ from typing import Any, Dict, Generic, List, Optional, Sequence, Type, TypeVar, 
 from fastapi.encoders import jsonable_encoder
 from fastapi_pagination.api import create_page, resolve_params
 from fastapi_pagination.bases import AbstractPage, AbstractParams
+from fastapi_pagination.ext.async_sqlalchemy import paginate
 from sqlmodel import SQLModel, func, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel.sql.expression import Select, SelectOfScalar
@@ -40,17 +41,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         params: Optional[AbstractParams] = None,
     ) -> AbstractPage[ModelType]:
         params = resolve_params(params)
-        raw_params = params.to_raw_params()
 
         if query is None:
             query = select(self.model)
 
-        total: int = (
-            await db.execute(select([func.count()]).select_from(query.subquery()))
-        ).scalar() or 0
-        items_statement = query.limit(raw_params.limit).offset(raw_params.offset)
-        items: List[ModelType] = (await db.execute(items_statement)).scalars().all()
-        return create_page(items, total, params)
+        items_statement: AbstractPage[ModelType] = await paginate(db, query, params)
+        return items_statement
 
     async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
         # TODO: review this
