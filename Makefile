@@ -1,4 +1,4 @@
-.PHONY: flake black test isort mypy unit check-code build up down test
+.PHONY: ruff black test isort mypy unit check-code build up down test
 .DEFAULT_GOAL := help
 APP_PATH := service
 
@@ -16,8 +16,8 @@ export PRINT_HELP_PYSCRIPT
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
-flake: ## Check formatting with flake8
-	poetry run flakeheaven lint ${APP_PATH}
+ruff: ## Check formatting with ruff
+	poetry run ruff ${APP_PATH}
 
 black: ## Format code with black
 	poetry run black ${APP_PATH}
@@ -31,7 +31,7 @@ mypy: ## Check typing with mypy
 unit: ## Run unit tests
 	poetry run pytest -m unit
 
-check-code: flake black isort mypy unit ## Run all code checks
+check-code: ruff black isort mypy unit ## Run all code checks
 
 build: ## Build compose
 	docker-compose build
